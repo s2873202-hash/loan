@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>雲端信貸管理系統</title>
   <style>
-    :root { --primary: #2563eb; --bg: #f8fafc; --card-bg: #ffffff; --text: #0f172a; --border: #e2e8f0; --danger: #ef4444; }
+    :root { --primary: #2563eb; --bg: #f8fafc; --card-bg: #ffffff; --text: #0f172a; --border: #e2e8f0; --danger: #ef4444; --success: #16a34a; }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
     body { background: var(--bg); color: var(--text); padding: 20px; }
     .container { max-width: 1000px; margin: 0 auto; }
@@ -14,9 +14,10 @@
     .form-group { display: flex; flex-direction: column; }
     .form-group label { font-size: 0.8rem; font-weight: 600; color: #64748b; margin-bottom: 4px; }
     input { padding: 8px; border: 1px solid var(--border); border-radius: 6px; }
-    .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    .btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; text-decoration: none; display: inline-block; font-size: 0.85rem; }
     .btn-primary { background: var(--primary); color: white; }
     .btn-danger { background: #fee2e2; color: var(--danger); }
+    .btn-cal { background: #dcfce7; color: var(--success); border: 1px solid #bbf7d0; margin-right: 4px; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th, td { padding: 12px; border-bottom: 1px solid var(--border); text-align: left; }
     th { background: #f1f5f9; }
@@ -43,17 +44,17 @@
 
   <div class="card">
     <form id="loan-form" class="grid">
-      <div class="form-group"><label>銀行名稱</label><input type="text" id="bank" required></div>
-      <div class="form-group"><label>剩餘本金</label><input type="number" id="balance" required></div>
-      <div class="form-group"><label>年利率 (%)</label><input type="number" step="0.01" id="rate" required></div>
-      <div class="form-group"><label>剩餘期數 (月)</label><input type="number" id="months" required></div>
-      <div class="form-group"><label>每月繳款日</label><input type="number" min="1" max="31" id="payDay" required></div>
+      <div class="form-group"><label>銀行名稱</label><input type="text" id="bank" placeholder="例如：台新銀行" required></div>
+      <div class="form-group"><label>剩餘本金</label><input type="number" id="balance" placeholder="500000" required></div>
+      <div class="form-group"><label>年利率 (%)</label><input type="number" step="0.01" id="rate" placeholder="2.88" required></div>
+      <div class="form-group"><label>剩餘期數 (月)</label><input type="number" id="months" placeholder="84" required></div>
+      <div class="form-group"><label>每月繳款日</label><input type="number" min="1" max="31" id="payDay" placeholder="10" required></div>
       <div class="form-group" style="justify-content: flex-end;"><button type="submit" class="btn btn-primary">+ 新增貸款</button></div>
     </form>
 
     <table>
       <thead>
-        <tr><th>銀行</th><th>剩餘本金</th><th>利率</th><th>剩餘期數</th><th>繳款日</th><th>估算月付金</th><th>操作</th></tr>
+        <tr><th>銀行</th><th>剩餘本金</th><th>利率</th><th>剩餘期數</th><th>繳款日</th><th>估算月付金</th><th>操作與提醒</th></tr>
       </thead>
       <tbody id="loan-list"></tbody>
     </table>
@@ -64,7 +65,6 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-  // 已帶入您截圖中的真實 Firebase 金鑰
   const firebaseConfig = {
     apiKey: "AIzaSyCWx0lVV819nGYeEyCJ9ZSbJhAUqGCO5Ro",
     authDomain: "loan-867b2.firebaseapp.com",
@@ -82,7 +82,6 @@
 
   let loans = [];
 
-  // 即時監聽雲端資料變更
   onValue(loansRef, (snapshot) => {
     const data = snapshot.val();
     loans = data ? data : [];
@@ -95,6 +94,27 @@
     return i === 0 ? p / m : p * (i * Math.pow(1 + i, m)) / (Math.pow(1 + i, m) - 1);
   }
 
+  // 產生 Google 日曆加入網址
+  function buildGoogleCalendarUrl(bank, payDay, pmt) {
+    const now = new Date();
+    let targetYear = now.getFullYear();
+    let targetMonth = now.getMonth();
+
+    // 如果這個月的繳款日已經過了，就推算到下個月
+    if (now.getDate() > payDay) {
+      targetMonth += 1;
+    }
+
+    const eventDate = new Date(targetYear, targetMonth, payDay);
+    const dateStr = eventDate.toISOString().replace(/-|:|\.\d+/g, '').substring(0, 8);
+    
+    const title = encodeURIComponent(`[繳費提醒] ${bank} 信貸扣款`);
+    const details = encodeURIComponent(`每月扣款金額：NT$ ${Math.round(pmt).toLocaleString()}\n請確保扣款帳戶餘額充足！`);
+    
+    // RRULE:FREQ=MONTHLY 代表「每月重複」
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dateStr}/${dateStr}&details=${details}&recur=RRULE:FREQ=MONTHLY`;
+  }
+
   function render() {
     const tbody = document.getElementById("loan-list");
     tbody.innerHTML = "";
@@ -105,6 +125,8 @@
       totalBal += item.balance;
       totalPmt += pmt;
 
+      const calUrl = buildGoogleCalendarUrl(item.bank, item.payDay, pmt);
+
       tbody.innerHTML += `
         <tr>
           <td><strong>${item.bank}</strong></td>
@@ -113,7 +135,10 @@
           <td>${item.months} 個月</td>
           <td>每月 ${item.payDay} 日</td>
           <td>NT$ ${Math.round(pmt).toLocaleString()}</td>
-          <td><button class="btn btn-danger" onclick="deleteLoan(${index})">刪除</button></td>
+          <td>
+            <a href="${calUrl}" target="_blank" class="btn btn-cal">📅 加到日曆</a>
+            <button class="btn btn-danger" onclick="deleteLoan(${index})">刪除</button>
+          </td>
         </tr>
       `;
     });
