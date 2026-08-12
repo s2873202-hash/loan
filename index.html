@@ -1,10 +1,145 @@
-const firebaseConfig = {
-  apiKey: "AIzaSyCWx0lVV819nGYeEyCJ9ZSbJhAUqGCO5Ro",
-  authDomain: "loan-867b2.firebaseapp.com",
-  databaseURL: "https://loan-867b2-default-rtdb.firebaseio.com",
-  projectId: "loan-867b2",
-  storageBucket: "loan-867b2.firebasestorage.app",
-  messagingSenderId: "512494811629",
-  appId: "1:512494811629:web:b7bd46a8c1314382850fe4",
-  measurementId: "G-H4Z6EB2TL7"
-};
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>雲端信貸管理系統</title>
+  <style>
+    :root { --primary: #2563eb; --bg: #f8fafc; --card-bg: #ffffff; --text: #0f172a; --border: #e2e8f0; --danger: #ef4444; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 20px; }
+    .container { max-width: 1000px; margin: 0 auto; }
+    .card { background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 12px; }
+    .form-group { display: flex; flex-direction: column; }
+    .form-group label { font-size: 0.8rem; font-weight: 600; color: #64748b; margin-bottom: 4px; }
+    input { padding: 8px; border: 1px solid var(--border); border-radius: 6px; }
+    .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-danger { background: #fee2e2; color: var(--danger); }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 12px; border-bottom: 1px solid var(--border); text-align: left; }
+    th { background: #f1f5f9; }
+    .metrics { display: flex; gap: 16px; margin-bottom: 20px; }
+    .metric-item { flex: 1; background: #fff; padding: 16px; border-radius: 8px; border: 1px solid var(--border); }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>☁️ 跨裝置實時同步信貸管理</h2>
+  <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 16px;">電腦輸入，手機同步即時更新</p>
+
+  <div class="metrics">
+    <div class="metric-item">
+      <div style="font-size: 0.8rem; color: #64748b;">總剩餘本金</div>
+      <div id="total-bal" style="font-size: 1.5rem; font-weight: bold;">NT$ 0</div>
+    </div>
+    <div class="metric-item">
+      <div style="font-size: 0.8rem; color: #64748b;">每月總繳款</div>
+      <div id="total-pmt" style="font-size: 1.5rem; font-weight: bold;">NT$ 0</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <form id="loan-form" class="grid">
+      <div class="form-group"><label>銀行名稱</label><input type="text" id="bank" required></div>
+      <div class="form-group"><label>剩餘本金</label><input type="number" id="balance" required></div>
+      <div class="form-group"><label>年利率 (%)</label><input type="number" step="0.01" id="rate" required></div>
+      <div class="form-group"><label>剩餘期數 (月)</label><input type="number" id="months" required></div>
+      <div class="form-group"><label>每月繳款日</label><input type="number" min="1" max="31" id="payDay" required></div>
+      <div class="form-group" style="justify-content: flex-end;"><button type="submit" class="btn btn-primary">+ 新增貸款</button></div>
+    </form>
+
+    <table>
+      <thead>
+        <tr><th>銀行</th><th>剩餘本金</th><th>利率</th><th>剩餘期數</th><th>繳款日</th><th>估算月付金</th><th>操作</th></tr>
+      </thead>
+      <tbody id="loan-list"></tbody>
+    </table>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+  // 已帶入您截圖中的真實 Firebase 金鑰
+  const firebaseConfig = {
+    apiKey: "AIzaSyCWx0lVV819nGYeEyCJ9ZSbJhAUqGCO5Ro",
+    authDomain: "loan-867b2.firebaseapp.com",
+    databaseURL: "https://loan-867b2-default-rtdb.firebaseio.com",
+    projectId: "loan-867b2",
+    storageBucket: "loan-867b2.firebasestorage.app",
+    messagingSenderId: "512494811629",
+    appId: "1:512494811629:web:b7bd46a8c1314382850fe4",
+    measurementId: "G-H4Z6EB2TL7"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const loansRef = ref(db, 'loans');
+
+  let loans = [];
+
+  // 即時監聽雲端資料變更
+  onValue(loansRef, (snapshot) => {
+    const data = snapshot.val();
+    loans = data ? data : [];
+    render();
+  });
+
+  function calcPMT(p, r, m) {
+    if (m <= 0) return 0;
+    const i = (r / 100) / 12;
+    return i === 0 ? p / m : p * (i * Math.pow(1 + i, m)) / (Math.pow(1 + i, m) - 1);
+  }
+
+  function render() {
+    const tbody = document.getElementById("loan-list");
+    tbody.innerHTML = "";
+    let totalBal = 0, totalPmt = 0;
+
+    loans.forEach((item, index) => {
+      const pmt = calcPMT(item.balance, item.rate, item.months);
+      totalBal += item.balance;
+      totalPmt += pmt;
+
+      tbody.innerHTML += `
+        <tr>
+          <td><strong>${item.bank}</strong></td>
+          <td>NT$ ${Math.round(item.balance).toLocaleString()}</td>
+          <td>${item.rate}%</td>
+          <td>${item.months} 個月</td>
+          <td>每月 ${item.payDay} 日</td>
+          <td>NT$ ${Math.round(pmt).toLocaleString()}</td>
+          <td><button class="btn btn-danger" onclick="deleteLoan(${index})">刪除</button></td>
+        </tr>
+      `;
+    });
+
+    document.getElementById("total-bal").textContent = `NT$ ${Math.round(totalBal).toLocaleString()}`;
+    document.getElementById("total-pmt").textContent = `NT$ ${Math.round(totalPmt).toLocaleString()}`;
+  }
+
+  document.getElementById("loan-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    loans.push({
+      bank: document.getElementById("bank").value,
+      balance: parseFloat(document.getElementById("balance").value),
+      rate: parseFloat(document.getElementById("rate").value),
+      months: parseInt(document.getElementById("months").value),
+      payDay: parseInt(document.getElementById("payDay").value)
+    });
+    set(loansRef, loans);
+    e.target.reset();
+  });
+
+  window.deleteLoan = (index) => {
+    loans.splice(index, 1);
+    set(loansRef, loans);
+  };
+</script>
+
+</body>
+</html>
