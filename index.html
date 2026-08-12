@@ -3,62 +3,110 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>雲端信貸管理系統</title>
+  <title>全功能信貸管理與試算系統</title>
   <style>
-    :root { --primary: #2563eb; --bg: #f8fafc; --card-bg: #ffffff; --text: #0f172a; --border: #e2e8f0; --danger: #ef4444; --success: #16a34a; }
+    :root { --primary: #2563eb; --bg: #f8fafc; --card-bg: #ffffff; --text: #0f172a; --border: #e2e8f0; --danger: #ef4444; --success: #16a34a; --warning: #d97706; }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
-    body { background: var(--bg); color: var(--text); padding: 20px; }
-    .container { max-width: 1000px; margin: 0 auto; }
+    body { background: var(--bg); color: var(--text); padding: 20px; line-height: 1.5; }
+    .container { max-width: 1100px; margin: 0 auto; }
     .card { background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; }
+    h2 { font-size: 1.4rem; color: var(--primary); margin-bottom: 12px; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 12px; }
     .form-group { display: flex; flex-direction: column; }
     .form-group label { font-size: 0.8rem; font-weight: 600; color: #64748b; margin-bottom: 4px; }
-    input { padding: 8px; border: 1px solid var(--border); border-radius: 6px; }
+    input, select { padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; }
     .btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; text-decoration: none; display: inline-block; font-size: 0.85rem; }
     .btn-primary { background: var(--primary); color: white; }
     .btn-danger { background: #fee2e2; color: var(--danger); }
     .btn-cal { background: #dcfce7; color: var(--success); border: 1px solid #bbf7d0; margin-right: 4px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { padding: 12px; border-bottom: 1px solid var(--border); text-align: left; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+    th, td { padding: 10px; border-bottom: 1px solid var(--border); text-align: left; }
     th { background: #f1f5f9; }
     .metrics { display: flex; gap: 16px; margin-bottom: 20px; }
     .metric-item { flex: 1; background: #fff; padding: 16px; border-radius: 8px; border: 1px solid var(--border); }
+    .result-box { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 8px; margin-top: 12px; font-size: 0.95rem; }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <h2>☁️ 跨裝置實時同步信貸管理</h2>
-  <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 16px;">電腦輸入，手機同步即時更新</p>
+  <header style="margin-bottom: 20px;">
+    <h2>☁️ 全功能跨裝置信貸管理與試算系統</h2>
+    <p style="color: #64748b; font-size: 0.85rem;">即時雲端同步 ｜ Google 日曆提醒 ｜ 提前還本省息 ｜ 轉貸代償效益分析</p>
+  </header>
 
+  <!-- 數據總覽 -->
   <div class="metrics">
     <div class="metric-item">
       <div style="font-size: 0.8rem; color: #64748b;">總剩餘本金</div>
-      <div id="total-bal" style="font-size: 1.5rem; font-weight: bold;">NT$ 0</div>
+      <div id="total-bal" style="font-size: 1.4rem; font-weight: bold;">NT$ 0</div>
     </div>
     <div class="metric-item">
       <div style="font-size: 0.8rem; color: #64748b;">每月總繳款</div>
-      <div id="total-pmt" style="font-size: 1.5rem; font-weight: bold;">NT$ 0</div>
+      <div id="total-pmt" style="font-size: 1.4rem; font-weight: bold;">NT$ 0</div>
+    </div>
+    <div class="metric-item">
+      <div style="font-size: 0.8rem; color: #64748b;">加權平均利率</div>
+      <div id="avg-rate" style="font-size: 1.4rem; font-weight: bold; color: var(--warning);">0.00%</div>
     </div>
   </div>
 
+  <!-- 功能一：多銀行信貸清單管理 -->
   <div class="card">
-    <form id="loan-form" class="grid">
-      <div class="form-group"><label>銀行名稱</label><input type="text" id="bank" placeholder="例如：台新銀行" required></div>
-      <div class="form-group"><label>剩餘本金</label><input type="number" id="balance" placeholder="500000" required></div>
+    <h3>1. 多銀行信貸清單</h3>
+    <form id="loan-form" class="grid" style="margin-top: 10px;">
+      <div class="form-group"><label>銀行名稱</label><input type="text" id="bank" placeholder="如：台新銀行" required></div>
+      <div class="form-group"><label>剩餘本金 (元)</label><input type="number" id="balance" placeholder="500000" required></div>
       <div class="form-group"><label>年利率 (%)</label><input type="number" step="0.01" id="rate" placeholder="2.88" required></div>
       <div class="form-group"><label>剩餘期數 (月)</label><input type="number" id="months" placeholder="84" required></div>
       <div class="form-group"><label>每月繳款日</label><input type="number" min="1" max="31" id="payDay" placeholder="10" required></div>
       <div class="form-group" style="justify-content: flex-end;"><button type="submit" class="btn btn-primary">+ 新增貸款</button></div>
     </form>
 
-    <table>
-      <thead>
-        <tr><th>銀行</th><th>剩餘本金</th><th>利率</th><th>剩餘期數</th><th>繳款日</th><th>估算月付金</th><th>操作與提醒</th></tr>
-      </thead>
-      <tbody id="loan-list"></tbody>
-    </table>
+    <div style="overflow-x: auto;">
+      <table>
+        <thead>
+          <tr><th>銀行</th><th>剩餘本金</th><th>利率</th><th>剩餘期數</th><th>繳款日</th><th>估算月付金</th><th>操作與提醒</th></tr>
+        </thead>
+        <tbody id="loan-list"></tbody>
+      </table>
+    </div>
   </div>
+
+  <!-- 功能二：單筆提前還本省息試算 -->
+  <div class="card">
+    <h3>2. 單筆提前還本省息試算</h3>
+    <div class="grid" style="margin-top: 10px;">
+      <div class="form-group">
+        <label>選擇貸款項目</label>
+        <select id="prepay-target"></select>
+      </div>
+      <div class="form-group">
+        <label>打算提前還本金額 (元)</label>
+        <input type="number" id="prepay-amount" placeholder="100000">
+      </div>
+      <div class="form-group" style="justify-content: flex-end;">
+        <button class="btn btn-primary" onclick="calcPrepayment()">開始試算省息效益</button>
+      </div>
+    </div>
+    <div id="prepay-result" class="result-box" style="display: none;"></div>
+  </div>
+
+  <!-- 功能三：整合轉貸代償效益分析 -->
+  <div class="card">
+    <h3>3. 整合轉貸代償效益分析</h3>
+    <p style="color: #64748b; font-size: 0.85rem;">估算將上方所有貸款清單「打包轉貸」到新銀行的效益與平衡點</p>
+    <div class="grid" style="margin-top: 10px;">
+      <div class="form-group"><label>新轉貸開辦費/手續費 (元)</label><input type="number" id="refinance-fee" value="9000"></div>
+      <div class="form-group"><label>新轉貸期限 (月)</label><input type="number" id="refinance-months" value="84"></div>
+      <div class="form-group"><label>預期新利率 (%)</label><input type="number" step="0.01" id="refinance-rate" placeholder="2.15"></div>
+      <div class="form-group" style="justify-content: flex-end;">
+        <button class="btn btn-primary" onclick="calcRefinance()">分析轉貸效益與平衡點</button>
+      </div>
+    </div>
+    <div id="refinance-result" class="result-box" style="display: none;"></div>
+  </div>
+
 </div>
 
 <script type="module">
@@ -94,36 +142,31 @@
     return i === 0 ? p / m : p * (i * Math.pow(1 + i, m)) / (Math.pow(1 + i, m) - 1);
   }
 
-  // 產生 Google 日曆加入網址
   function buildGoogleCalendarUrl(bank, payDay, pmt) {
     const now = new Date();
     let targetYear = now.getFullYear();
     let targetMonth = now.getMonth();
-
-    // 如果這個月的繳款日已經過了，就推算到下個月
-    if (now.getDate() > payDay) {
-      targetMonth += 1;
-    }
-
+    if (now.getDate() > payDay) targetMonth += 1;
     const eventDate = new Date(targetYear, targetMonth, payDay);
     const dateStr = eventDate.toISOString().replace(/-|:|\.\d+/g, '').substring(0, 8);
-    
     const title = encodeURIComponent(`[繳費提醒] ${bank} 信貸扣款`);
     const details = encodeURIComponent(`每月扣款金額：NT$ ${Math.round(pmt).toLocaleString()}\n請確保扣款帳戶餘額充足！`);
-    
-    // RRULE:FREQ=MONTHLY 代表「每月重複」
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dateStr}/${dateStr}&details=${details}&recur=RRULE:FREQ=MONTHLY`;
   }
 
   function render() {
     const tbody = document.getElementById("loan-list");
+    const prepaySelect = document.getElementById("prepay-target");
     tbody.innerHTML = "";
-    let totalBal = 0, totalPmt = 0;
+    prepaySelect.innerHTML = "";
+
+    let totalBal = 0, totalPmt = 0, weightedRateSum = 0;
 
     loans.forEach((item, index) => {
       const pmt = calcPMT(item.balance, item.rate, item.months);
       totalBal += item.balance;
       totalPmt += pmt;
+      weightedRateSum += (item.balance * item.rate);
 
       const calUrl = buildGoogleCalendarUrl(item.bank, item.payDay, pmt);
 
@@ -136,15 +179,20 @@
           <td>每月 ${item.payDay} 日</td>
           <td>NT$ ${Math.round(pmt).toLocaleString()}</td>
           <td>
-            <a href="${calUrl}" target="_blank" class="btn btn-cal">📅 加到日曆</a>
+            <a href="${calUrl}" target="_blank" class="btn btn-cal">📅 日曆提醒</a>
             <button class="btn btn-danger" onclick="deleteLoan(${index})">刪除</button>
           </td>
         </tr>
       `;
+
+      prepaySelect.innerHTML += `<option value="${index}">${item.bank} (剩餘本金 NT$ ${Math.round(item.balance).toLocaleString()})</option>`;
     });
+
+    const avgRate = totalBal > 0 ? (weightedRateSum / totalBal) : 0;
 
     document.getElementById("total-bal").textContent = `NT$ ${Math.round(totalBal).toLocaleString()}`;
     document.getElementById("total-pmt").textContent = `NT$ ${Math.round(totalPmt).toLocaleString()}`;
+    document.getElementById("avg-rate").textContent = `${avgRate.toFixed(2)}%`;
   }
 
   document.getElementById("loan-form").addEventListener("submit", (e) => {
@@ -163,6 +211,84 @@
   window.deleteLoan = (index) => {
     loans.splice(index, 1);
     set(loansRef, loans);
+  };
+
+  // 提前還本試算邏輯
+  window.calcPrepayment = () => {
+    const idx = document.getElementById("prepay-target").value;
+    const prepayAmt = parseFloat(document.getElementById("prepay-amount").value);
+    if (idx === "" || isNaN(prepayAmt) || prepayAmt <= 0) return alert("請選擇貸款並輸入有效的還本金額");
+
+    const item = loans[idx];
+    if (prepayAmt >= item.balance) return alert("提前還本金額不能大於或等於剩餘本金");
+
+    const origPmt = calcPMT(item.balance, item.rate, item.months);
+    const origTotalInterest = (origPmt * item.months) - item.balance;
+
+    const newBal = item.balance - prepayAmt;
+    const newPmt = calcPMT(newBal, item.rate, item.months);
+    const newTotalInterest = (newPmt * item.months) - newBal;
+
+    const savedInterest = origTotalInterest - newTotalInterest;
+    const monthlySavedPmt = origPmt - newPmt;
+
+    const resBox = document.getElementById("prepay-result");
+    resBox.style.display = "block";
+    resBox.innerHTML = `
+      <strong>💡 提前還本 ${Math.round(prepayAmt).toLocaleString()} 元效益分析：</strong><br>
+      • 每月供款減輕：<strong>NT$ ${Math.round(monthlySavedPmt).toLocaleString()}</strong> 元 (降至 NT$ ${Math.round(newPmt).toLocaleString()})<br>
+      • 總共節省利息：<strong style="color:var(--success);">NT$ ${Math.round(savedInterest).toLocaleString()}</strong> 元
+    `;
+  };
+
+  // 轉貸代償效益與劃算平衡點計算邏輯
+  window.calcRefinance = () => {
+    let totalBal = 0, origTotalCost = 0;
+    loans.forEach(item => {
+      totalBal += item.balance;
+      const pmt = calcPMT(item.balance, item.rate, item.months);
+      origTotalCost += (pmt * item.months);
+    });
+
+    if (totalBal === 0) return alert("請先新增至少一筆貸款資料");
+
+    const fee = parseFloat(document.getElementById("refinance-fee").value) || 0;
+    const newMonths = parseInt(document.getElementById("refinance-months").value) || 84;
+    const newRateInput = parseFloat(document.getElementById("refinance-rate").value);
+
+    // 計算劃算平衡點利率 (Breakeven Interest Rate)
+    // 總還款額(新) + 手續費 = 原本總還款額
+    let breakEvenRate = 0;
+    for (let r = 0.01; r <= 20; r += 0.01) {
+      const pmt = calcPMT(totalBal, r, newMonths);
+      if ((pmt * newMonths) + fee >= origTotalCost) {
+        breakEvenRate = r - 0.01;
+        break;
+      }
+    }
+
+    let html = `<strong>📊 轉貸代償整合效益分析：</strong><br>`;
+    html += `• 整合總金額：NT$ ${Math.round(totalBal).toLocaleString()} 元<br>`;
+    html += `• <strong>劃算平衡點利率：<span style="color:var(--danger);">${breakEvenRate.toFixed(2)}%</span></strong>（新銀行利率高於此值就不劃算）<br>`;
+
+    if (!isNaN(newRateInput)) {
+      const newPmt = calcPMT(totalBal, newRateInput, newMonths);
+      const newTotalCost = (newPmt * newMonths) + fee;
+      const netSavings = origTotalCost - newTotalCost;
+
+      html += `<hr style="margin:8px 0; border:none; border-top:1px dashed #bbf7d0;">`;
+      html += `預期利率 ${newRateInput}% 下試算：<br>`;
+      html += `• 新每月供款：NT$ ${Math.round(newPmt).toLocaleString()} 元<br>`;
+      if (netSavings > 0) {
+        html += `• 扣除手續費後淨省金額：<strong style="color:var(--success);">NT$ ${Math.round(netSavings).toLocaleString()} 元 (划算！)</strong>`;
+      } else {
+        html += `• 扣除手續費後總支出多出：<strong style="color:var(--danger);">NT$ ${Math.round(Math.abs(netSavings)).toLocaleString()} 元 (不划算)</strong>`;
+      }
+    }
+
+    const resBox = document.getElementById("refinance-result");
+    resBox.style.display = "block";
+    resBox.innerHTML = html;
   };
 </script>
 
