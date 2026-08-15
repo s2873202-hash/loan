@@ -52,7 +52,11 @@
       <div id="total-bal" style="font-size: 1.3rem; font-weight: bold;">NT$ 0</div>
     </div>
     <div class="metric-item">
-      <div style="font-size: 0.8rem; color: #64748b;">預估總利息 (信貸+卡費循環)</div>
+      <div style="font-size: 0.8rem; color: #64748b;">每月預估利息總支出</div>
+      <div id="monthly-interest" style="font-size: 1.3rem; font-weight: bold; color: var(--danger);">NT$ 0</div>
+    </div>
+    <div class="metric-item">
+      <div style="font-size: 0.8rem; color: #64748b;">預估信貸總利息 (剩餘全期)</div>
       <div id="total-interest" style="font-size: 1.3rem; font-weight: bold; color: var(--danger);">NT$ 0</div>
     </div>
     <div class="metric-item">
@@ -80,7 +84,7 @@
     <div style="overflow-x: auto;">
       <table>
         <thead>
-          <tr><th>銀行</th><th>剩餘本金</th><th>利率</th><th>剩餘期數</th><th>預估總利息</th><th>每月繳款日</th><th>估算月付金</th><th>操作與提醒</th></tr>
+          <tr><th>銀行</th><th>剩餘本金</th><th>利率</th><th>剩餘期數</th><th>當月預估利息</th><th>預估總利息</th><th>每月繳款日</th><th>估算月付金</th><th>操作與提醒</th></tr>
         </thead>
         <tbody id="loan-list"></tbody>
       </table>
@@ -102,7 +106,7 @@
     <div style="overflow-x: auto;">
       <table>
         <thead>
-          <tr><th>銀行/卡名</th><th>卡費總額</th><th>循環利率</th><th>單月預估循環利息</th><th>最低應繳金額</th><th>繳款截止日</th><th>操作與提醒</th></tr>
+          <tr><th>銀行/卡名</th><th>卡費總額</th><th>循環利率</th><th>當月預估利息</th><th>最低應繳金額</th><th>繳款截止日</th><th>操作與提醒</th></tr>
         </thead>
         <tbody id="card-list"></tbody>
       </table>
@@ -122,8 +126,8 @@
 
   <!-- 功能四：整合轉貸代償效益分析 -->
   <div class="card">
-    <h3>4. 整合轉貸代償效益分析</h3>
-    <p style="color: #64748b; font-size: 0.85rem;">估算將上方所有貸款清單「打包轉貸」到新銀行的效益與平衡點</p>
+    <h3>4. 整合轉貸代償效益分析 (含信貸與信用卡代償)</h3>
+    <p style="color: #64748b; font-size: 0.85rem;">自動打包上方所有「信貸剩餘本金」與「信用卡未繳卡費」進行單一整合貸款試算</p>
     <div class="grid" style="margin-top: 10px;">
       <div class="form-group"><label>新轉貸開辦費/手續費 (元)</label><input type="number" id="refinance-fee" value="9000"></div>
       <div class="form-group"><label>新轉貸期限 (月)</label><input type="number" id="refinance-months" value="84"></div>
@@ -220,21 +224,23 @@
   }
 
   function render() {
-    // 渲染信貸
     const tbody = document.getElementById("loan-list");
     const prepaySelect = document.getElementById("prepay-target");
     tbody.innerHTML = "";
     prepaySelect.innerHTML = "";
 
-    let totalBal = 0, totalPmt = 0, totalInterest = 0, weightedRateSum = 0;
+    let totalBal = 0, totalPmt = 0, totalInterest = 0, monthlyInterestSum = 0, weightedRateSum = 0;
 
+    // 渲染信貸
     loans.forEach((item, index) => {
       const pmt = calcPMT(item.balance, item.rate, item.months);
       const interest = (pmt * item.months) - item.balance;
+      const firstMonthInterest = item.balance * (item.rate / 100) / 12; // 當月（首月）利息
       
       totalBal += item.balance;
       totalPmt += pmt;
       totalInterest += interest;
+      monthlyInterestSum += firstMonthInterest;
       weightedRateSum += (item.balance * item.rate);
 
       const calUrl = buildGoogleCalendarUrl("信貸扣款提醒", item.bank, item.payDay, pmt);
@@ -245,6 +251,7 @@
           <td>NT$ ${Math.round(item.balance).toLocaleString()}</td>
           <td>${item.rate}%</td>
           <td>${item.months} 個月</td>
+          <td style="color:var(--danger);">NT$ ${Math.round(firstMonthInterest).toLocaleString()}</td>
           <td style="color:var(--danger);">NT$ ${Math.round(interest).toLocaleString()}</td>
           <td>每月 ${item.payDay} 日</td>
           <td>NT$ ${Math.round(pmt).toLocaleString()}</td>
@@ -264,11 +271,11 @@
     cardTbody.innerHTML = "";
 
     cards.forEach((item, index) => {
-      const monthlyInterest = (item.balance * (item.rate / 100)) / 12; // 單月預估循環利息
+      const monthlyInterest = (item.balance * (item.rate / 100)) / 12; // 單月循環利息
       
       totalBal += item.balance;
       totalPmt += item.minPay;
-      totalInterest += monthlyInterest; // 計算當月信用卡產生的利息
+      monthlyInterestSum += monthlyInterest;
       weightedRateSum += (item.balance * item.rate);
 
       const calUrl = buildGoogleCalendarUrl("信用卡繳款提醒", item.bank, item.payDay, item.minPay);
@@ -278,7 +285,7 @@
           <td><strong>${item.bank}</strong></td>
           <td>NT$ ${Math.round(item.balance).toLocaleString()}</td>
           <td style="color:var(--danger);">${item.rate}%</td>
-          <td style="color:var(--danger);">NT$ ${Math.round(monthlyInterest).toLocaleString()} /月</td>
+          <td style="color:var(--danger);">NT$ ${Math.round(monthlyInterest).toLocaleString()}</td>
           <td>NT$ ${Math.round(item.minPay).toLocaleString()}</td>
           <td>每月 ${item.payDay} 日</td>
           <td>
@@ -293,6 +300,7 @@
     const avgRate = totalBal > 0 ? (weightedRateSum / totalBal) : 0;
 
     document.getElementById("total-bal").textContent = `NT$ ${Math.round(totalBal).toLocaleString()}`;
+    document.getElementById("monthly-interest").textContent = `NT$ ${Math.round(monthlyInterestSum).toLocaleString()}`;
     document.getElementById("total-interest").textContent = `NT$ ${Math.round(totalInterest).toLocaleString()}`;
     document.getElementById("total-pmt").textContent = `NT$ ${Math.round(totalPmt).toLocaleString()}`;
     document.getElementById("avg-rate").textContent = `${avgRate.toFixed(2)}%`;
@@ -391,7 +399,7 @@
     closeModal('edit-card-modal');
   };
 
-  // 匯出 Excel (含多個工作表)
+  // 匯出 Excel
   window.exportToExcel = () => {
     if (loans.length === 0 && cards.length === 0) return alert("目前沒有可匯出的貸款或信用卡資料");
     
@@ -401,11 +409,13 @@
       const loanData = loans.map(item => {
         const pmt = calcPMT(item.balance, item.rate, item.months);
         const interest = (pmt * item.months) - item.balance;
+        const firstMonthInterest = item.balance * (item.rate / 100) / 12;
         return {
           "銀行名稱": item.bank,
           "剩餘本金 (元)": item.balance,
           "年利率 (%)": item.rate,
           "剩餘期數 (月)": item.months,
+          "當月預估利息 (元)": Math.round(firstMonthInterest),
           "預估利息總額 (元)": Math.round(interest),
           "每月繳款日": item.payDay,
           "估算月付金 (元)": Math.round(pmt)
@@ -434,7 +444,7 @@
     XLSX.writeFile(workbook, "個人綜合負債與信用卡管理報表.xlsx");
   };
 
-  // 試算邏輯
+  // 試算邏輯：單筆提前還本
   window.calcPrepayment = () => {
     const idx = document.getElementById("prepay-target").value;
     const prepayAmt = parseFloat(document.getElementById("prepay-amount").value);
@@ -462,19 +472,33 @@
     `;
   };
 
+  // 試算邏輯：整合代償 (包含信貸與信用卡)
   window.calcRefinance = () => {
-    let totalBal = 0, origTotalCost = 0;
+    let loanBal = 0, cardBal = 0;
+    let origLoanCost = 0;
+
+    // 加總信貸
     loans.forEach(item => {
-      totalBal += item.balance;
+      loanBal += item.balance;
       const pmt = calcPMT(item.balance, item.rate, item.months);
-      origTotalCost += (pmt * item.months);
+      origLoanCost += (pmt * item.months);
     });
 
-    if (totalBal === 0) return alert("請先新增至少一筆信貸資料");
+    // 加總信用卡
+    cards.forEach(item => {
+      cardBal += item.balance;
+    });
+
+    const totalBal = loanBal + cardBal;
+
+    if (totalBal === 0) return alert("請先新增至少一筆信貸或信用卡資料");
 
     const fee = parseFloat(document.getElementById("refinance-fee").value) || 0;
     const newMonths = parseInt(document.getElementById("refinance-months").value) || 84;
     const newRateInput = parseFloat(document.getElementById("refinance-rate").value);
+
+    // 原預估總成本（信貸全期供款金額 + 信用卡本金，註：信用卡若循環利息費用會更高，故以此作為基礎比較）
+    const origTotalCost = origLoanCost + cardBal;
 
     let breakEvenRate = 0;
     for (let r = 0.01; r <= 20; r += 0.01) {
@@ -485,9 +509,9 @@
       }
     }
 
-    let html = `<strong>📊 轉貸代償整合效益分析：</strong><br>`;
-    html += `• 整合總金額：NT$ ${Math.round(totalBal).toLocaleString()} 元<br>`;
-    html += `• <strong>劃算平衡點利率：<span style="color:var(--danger);">${breakEvenRate.toFixed(2)}%</span></strong>（新銀行利率高於此值就不劃算）<br>`;
+    let html = `<strong>📊 整合轉貸代償效益分析：</strong><br>`;
+    html += `• 打包整合總金額：<strong>NT$ ${Math.round(totalBal).toLocaleString()} 元</strong> (信貸: ${Math.round(loanBal).toLocaleString()} + 卡費: ${Math.round(cardBal).toLocaleString()})<br>`;
+    html += `• <strong>劃算平衡點利率：<span style="color:var(--danger);">${breakEvenRate.toFixed(2)}%</span></strong>（新銀行綜合利率高於此值就不劃算）<br>`;
 
     if (!isNaN(newRateInput)) {
       const newPmt = calcPMT(totalBal, newRateInput, newMonths);
@@ -495,12 +519,12 @@
       const netSavings = origTotalCost - newTotalCost;
 
       html += `<hr style="margin:8px 0; border:none; border-top:1px dashed #bbf7d0;">`;
-      html += `預期利率 ${newRateInput}% 下試算：<br>`;
-      html += `• 新每月供款：NT$ ${Math.round(newPmt).toLocaleString()} 元<br>`;
+      html += `預期新利率 ${newRateInput}% (分 ${newMonths} 期) 下試算：<br>`;
+      html += `• 整合後每月供款：<strong>NT$ ${Math.round(newPmt).toLocaleString()} 元</strong><br>`;
       if (netSavings > 0) {
-        html += `• 扣除手續費後淨省金額：<strong style="color:var(--success);">NT$ ${Math.round(netSavings).toLocaleString()} 元 (划算！)</strong>`;
+        html += `• 扣除開辦費後淨省金額：<strong style="color:var(--success);">NT$ ${Math.round(netSavings).toLocaleString()} 元 (划算！)</strong>`;
       } else {
-        html += `• 扣除手續費後總支出多出：<strong style="color:var(--danger);">NT$ ${Math.round(Math.abs(netSavings)).toLocaleString()} 元 (不划算)</strong>`;
+        html += `• 扣除開辦費後總支出多出：<strong style="color:var(--danger);">NT$ ${Math.round(Math.abs(netSavings)).toLocaleString()} 元 (不划算)</strong>`;
       }
     }
 
