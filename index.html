@@ -1,1 +1,4552 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>全功能跨裝置信貸與信用卡負債管理系統 V2.1</title>
+
+  <!-- Excel -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --danger: #ef4444;
+      --danger-bg: #fee2e2;
+      --success: #16a34a;
+      --success-bg: #f0fdf4;
+      --warning: #d97706;
+      --warning-bg: #fff7ed;
+      --purple: #8b5cf6;
+      --purple-dark: #7c3aed;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        "Microsoft JhengHei",
+        sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      padding: 20px;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+    }
+
+    h1 {
+      font-size: 1.55rem;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+
+    h2 {
+      font-size: 1.4rem;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+
+    h3 {
+      font-size: 1.1rem;
+      color: #334155;
+      margin-bottom: 8px;
+    }
+
+    p {
+      color: var(--muted);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 9px 10px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      font-size: 0.9rem;
+      background: white;
+      color: var(--text);
+      outline: none;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10);
+    }
+
+    .btn {
+      padding: 9px 13px;
+      border: none;
+      border-radius: 7px;
+      cursor: pointer;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 0.85rem;
+      transition: 0.15s;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      opacity: 0.95;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-danger {
+      background: var(--danger-bg);
+      color: var(--danger);
+    }
+
+    .btn-edit {
+      background: #e0f2fe;
+      color: #0284c7;
+      border: 1px solid #bae6fd;
+      margin-right: 4px;
+    }
+
+    .btn-cal {
+      background: #dcfce7;
+      color: var(--success);
+      border: 1px solid #bbf7d0;
+      margin-right: 4px;
+    }
+
+    .btn-excel {
+      background: #107c41;
+      color: white;
+    }
+
+    .btn-purple {
+      background: var(--purple);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: #e2e8f0;
+      color: #334155;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 0.9rem;
+    }
+
+    th,
+    td {
+      padding: 10px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    th {
+      background: #f1f5f9;
+      white-space: nowrap;
+    }
+
+    tr:hover td {
+      background: #fafcff;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .metric-item {
+      background: #fff;
+      padding: 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .metric-title {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .metric-value {
+      font-size: 1.3rem;
+      font-weight: bold;
+    }
+
+    .result-box {
+      background: var(--success-bg);
+      border: 1px solid #bbf7d0;
+      padding: 14px;
+      border-radius: 9px;
+      margin-top: 12px;
+      font-size: 0.95rem;
+    }
+
+    .warning-box {
+      background: var(--warning-bg);
+      border: 1px solid #fed7aa;
+      color: #9a3412;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+
+    .danger-box {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+
+    .success-text {
+      color: var(--success);
+      font-weight: bold;
+    }
+
+    .danger-text {
+      color: var(--danger);
+      font-weight: bold;
+    }
+
+    .warning-text {
+      color: var(--warning);
+      font-weight: bold;
+    }
+
+    .info-panel {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1e40af;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 0.88rem;
+    }
+
+    /* ==============================
+       Modal
+    ============================== */
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    /* ==============================
+       提前還本區塊 V2.1
+    ============================== */
+
+    #prepay-loans-container {
+      width: 100%;
+    }
+
+    .prepay-item {
+      display: grid;
+      grid-template-columns: 42px minmax(280px, 1fr) 220px;
+      align-items: center;
+      column-gap: 12px;
+      width: 100%;
+      min-height: 64px;
+      padding: 10px 8px;
+      border-bottom: 1px dashed var(--border);
+      background: #fff;
+    }
+
+    .prepay-item:hover {
+      background: #f8fafc;
+    }
+
+    .prepay-item .prepay-chk {
+      width: 20px;
+      height: 20px;
+      margin: 0 auto;
+      cursor: pointer;
+      accent-color: var(--primary);
+    }
+
+    .prepay-info {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .prepay-bank {
+      font-weight: 700;
+      color: #0f172a;
+      flex-shrink: 0;
+    }
+
+    .prepay-balance {
+      color: #64748b;
+      font-size: 0.9rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .prepay-amount-box {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .prepay-amount-label {
+      color: #64748b;
+      font-size: 0.85rem;
+    }
+
+    .prepay-amt-input {
+      width: 150px !important;
+      min-width: 150px;
+      height: 42px;
+      padding: 8px 10px;
+      border: 1px solid #dbe4ef;
+      border-radius: 8px;
+      font-size: 1rem;
+      color: #0f172a;
+      background: #fff;
+      outline: none;
+    }
+
+    .prepay-amt-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .prepay-header {
+      display: grid;
+      grid-template-columns: 42px minmax(280px, 1fr) 220px;
+      column-gap: 12px;
+      align-items: center;
+      padding: 8px;
+      background: #f1f5f9;
+      border-radius: 8px 8px 0 0;
+      font-size: 0.82rem;
+      color: #64748b;
+      font-weight: 700;
+    }
+
+    .prepay-header-right {
+      text-align: center;
+    }
+
+    /* ==============================
+       轉貸分析
+    ============================== */
+
+    .refinance-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .refi-box {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 12px;
+    }
+
+    .refi-label {
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin-bottom: 3px;
+    }
+
+    .refi-value {
+      font-size: 1.15rem;
+      font-weight: bold;
+    }
+
+    .rate-highlight {
+      font-size: 1.35rem;
+      font-weight: bold;
+      color: var(--primary);
+    }
+
+    .recommend-rate {
+      background: #eff6ff;
+      border: 2px solid #93c5fd;
+      border-radius: 10px;
+      padding: 15px;
+      margin-top: 12px;
+    }
+
+    /* ==============================
+       Loading
+    ============================== */
+
+    #loading {
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+      font-size: 1rem;
+      font-weight: bold;
+      color: var(--primary);
+    }
+
+    /* ==============================
+       Responsive
+    ============================== */
+
+    @media (max-width: 900px) {
+      body {
+        padding: 10px;
+      }
+
+      .card {
+        padding: 14px;
+      }
+
+      .prepay-item {
+        grid-template-columns: 36px minmax(180px, 1fr) 175px;
+        column-gap: 8px;
+      }
+
+      .prepay-header {
+        grid-template-columns: 36px minmax(180px, 1fr) 175px;
+      }
+
+      .prepay-amt-input {
+        width: 130px !important;
+        min-width: 130px;
+      }
+
+      .prepay-amount-label {
+        display: none;
+      }
+    }
+
+    @media (max-width: 650px) {
+
+      h2 {
+        font-size: 1.15rem;
+      }
+
+      .metrics {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      table {
+        font-size: 0.82rem;
+      }
+
+      th,
+      td {
+        padding: 8px;
+      }
+
+      .prepay-header {
+        display: none;
+      }
+
+      .prepay-item {
+        grid-template-columns: 34px 1fr;
+        grid-template-rows: auto auto;
+        row-gap: 8px;
+        padding: 12px 4px;
+      }
+
+      .prepay-item .prepay-chk {
+        grid-row: 1 / 3;
+      }
+
+      .prepay-info {
+        grid-column: 2;
+        display: block;
+      }
+
+      .prepay-bank {
+        display: block;
+        margin-bottom: 2px;
+      }
+
+      .prepay-balance {
+        display: block;
+        font-size: 0.82rem;
+      }
+
+      .prepay-amount-box {
+        grid-column: 2;
+        justify-content: flex-start;
+      }
+
+      .prepay-amount-label {
+        display: inline;
+      }
+
+      .prepay-amt-input {
+        width: 150px !important;
+        min-width: 150px;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .metrics {
+        grid-template-columns: 1fr;
+      }
+
+      .prepay-amount-label {
+        font-size: 0.78rem;
+      }
+
+      .prepay-amt-input {
+        width: 135px !important;
+        min-width: 135px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div id="loading">
+  ☁️ 正在連線資料庫...
+</div>
+
+<div class="container">
+
+  <!-- =========================
+       Header
+  ========================== -->
+
+  <header style="
+    margin-bottom:20px;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    flex-wrap:wrap;
+    gap:10px;
+  ">
+
+    <div>
+      <h2>☁️ 全功能跨裝置信貸與信用卡負債管理系統 V2.1</h2>
+
+      <p style="font-size:0.85rem;">
+        Firebase 雲端同步 ｜ 信用卡循環利息 ｜ Google 日曆提醒 ｜ 提前還本省息 ｜ Excel 匯出
+      </p>
+    </div>
+
+    <button class="btn btn-excel" onclick="exportToExcel()">
+      📊 匯出完整 Excel 報表
+    </button>
+
+  </header>
+
+
+  <!-- =========================
+       數據總覽
+  ========================== -->
+
+  <div class="metrics">
+
+    <div class="metric-item">
+      <div class="metric-title">
+        總負債本金（信貸＋卡費）
+      </div>
+
+      <div id="total-bal" class="metric-value">
+        NT$ 0
+      </div>
+    </div>
+
+
+    <div class="metric-item">
+      <div class="metric-title">
+        每月預估利息總支出
+      </div>
+
+      <div id="monthly-interest"
+           class="metric-value"
+           style="color:var(--danger);">
+        NT$ 0
+      </div>
+    </div>
+
+
+    <div class="metric-item">
+      <div class="metric-title">
+        預估信貸總利息（剩餘全期）
+      </div>
+
+      <div id="total-interest"
+           class="metric-value"
+           style="color:var(--danger);">
+        NT$ 0
+      </div>
+    </div>
+
+
+    <div class="metric-item">
+      <div class="metric-title">
+        每月總繳款需求
+      </div>
+
+      <div id="total-pmt" class="metric-value">
+        NT$ 0
+      </div>
+    </div>
+
+
+    <div class="metric-item">
+      <div class="metric-title">
+        整體加權平均利率
+      </div>
+
+      <div id="avg-rate"
+           class="metric-value"
+           style="color:var(--warning);">
+        0.00%
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- =========================
+       1. 信貸
+  ========================== -->
+
+  <div class="card">
+
+    <h3>1. 多銀行信貸清單</h3>
+
+    <form id="loan-form" class="grid">
+
+      <div class="form-group">
+        <label>銀行名稱</label>
+        <input
+          type="text"
+          id="bank"
+          placeholder="如：台新銀行"
+          required
+        >
+      </div>
+
+
+      <div class="form-group">
+        <label>剩餘本金（元）</label>
+        <input
+          type="number"
+          id="balance"
+          placeholder="500000"
+          min="0"
+          required
+        >
+      </div>
+
+
+      <div class="form-group">
+        <label>年利率（%）</label>
+        <input
+          type="number"
+          step="0.01"
+          id="rate"
+          placeholder="2.88"
+          min="0"
+          required
+        >
+      </div>
+
+
+      <div class="form-group">
+        <label>剩餘期數（月）</label>
+        <input
+          type="number"
+          id="months"
+          placeholder="84"
+          min="1"
+          required
+        >
+      </div>
+
+
+      <div class="form-group">
+        <label>每月繳款日</label>
+        <input
+          type="number"
+          min="1"
+          max="31"
+          id="payDay"
+          placeholder="10"
+          required
+        >
+      </div>
+
+
+      <div class="form-group" style="justify-content:flex-end;">
+        <button type="submit" class="btn btn-primary">
+          ＋ 新增信貸
+        </button>
+      </div>
+
+    </form>
+
+
+    <div style="overflow-x:auto;">
+
+      <table>
+
+        <thead>
+          <tr>
+            <th>銀行</th>
+            <th>剩餘本金</th>
+            <th>利率</th>
+            <th>剩餘期數</th>
+            <th>當月預估利息</th>
+            <th>預估總利息</th>
+            <th>繳款日</th>
+            <th>估算月付金</th>
+            <th>操作與提醒</th>
+          </tr>
+        </thead>
+
+        <tbody id="loan-list"></tbody>
+
+      </table>
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================
+       2. 信用卡
+  ========================== -->
+
+  <div class="card">
+
+    <h3>2. 信用卡卡費與循環利息統計</h3>
+
+    <form id="card-form" class="grid">
+
+      <div class="form-group">
+        <label>發卡銀行／卡名</label>
+        <input
+          type="text"
+          id="card-bank"
+          placeholder="如：玉山銀行"
+          required
+        >
+      </div>
+
+
+      <div class="form-group">
+        <label>未繳卡費總額（元）</label>
+        <input
+          type="number"
+          id="card-balance"
+          placeholder="50000"
+          min="0"
+          required
+        >
+      </div>
+
+
+      <div class="form-group">
+        <label>循環年利率（%）</label>
+        <input
+          type="number"
+          step="0.01"
+          id="card-rate"
+          placeholder="15.0"
+          min="0"
+          required
+        >
+      </div>
+
+
+      <div class="form-group">
+        <label>最低應繳金額（元）</label>
+        <input
+          type="number"
+          id="card-min"
+          placeholder="5000"
+          min="0"
+          required
+        >
+      </div>
+
+
+      <div class="form-group">
+        <label>每月繳款截止日</label>
+        <input
+          type="number"
+          min="1"
+          max="31"
+          id="card-payDay"
+          placeholder="15"
+          required
+        >
+      </div>
+
+
+      <div class="form-group" style="justify-content:flex-end;">
+
+        <button
+          type="submit"
+          class="btn btn-purple"
+        >
+          ＋ 新增信用卡
+        </button>
+
+      </div>
+
+    </form>
+
+
+    <div style="overflow-x:auto;">
+
+      <table>
+
+        <thead>
+          <tr>
+            <th>銀行／卡名</th>
+            <th>卡費總額</th>
+            <th>循環利率</th>
+            <th>當月預估利息</th>
+            <th>最低應繳</th>
+            <th>繳款截止日</th>
+            <th>操作與提醒</th>
+          </tr>
+        </thead>
+
+        <tbody id="card-list"></tbody>
+
+      </table>
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================
+       3. 提前還本
+  ========================== -->
+
+  <div class="card">
+
+    <h3>3. 多筆信貸提前還本省息試算</h3>
+
+    <p style="
+      color:#64748b;
+      font-size:0.85rem;
+      margin-bottom:10px;
+    ">
+      可勾選單筆或多筆信貸。可以手動輸入還本金額，
+      或輸入「還本資金總額」後，由系統依勾選貸款的剩餘本金比例自動分配。
+    </p>
+
+
+    <div class="info-panel">
+
+      💡 <strong>V2.1 分配方式：</strong>
+
+      輸入總資金後，系統會按照「勾選項目的剩餘本金比例」
+      自動分配提前還款。
+
+      系統會自動修正四捨五入誤差，
+      確保最後分配總額與你輸入的資金完全一致，
+      同時不會超過任何一筆貸款剩餘本金。
+
+    </div>
+
+
+    <div style="
+      margin-bottom:12px;
+      display:flex;
+      gap:16px;
+      align-items:center;
+      flex-wrap:wrap;
+      background:#f1f5f9;
+      padding:10px;
+      border-radius:8px;
+    ">
+
+      <div
+        class="form-group"
+        style="margin:0;min-width:220px;"
+      >
+
+        <label>
+          還本資金總額（元）
+        </label>
+
+        <input
+          type="number"
+          id="prepay-total-pool"
+          placeholder="例如：200000"
+          min="0"
+          oninput="autoDistributePool()"
+        >
+
+      </div>
+
+
+      <div style="
+        font-size:0.85rem;
+        color:#475569;
+        margin-top:16px;
+      ">
+
+        💡 勾選貸款後輸入總額，
+        系統會自動按本金比例分配。
+
+      </div>
+
+    </div>
+
+
+    <div style="
+      margin-bottom:10px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:10px;
+    ">
+
+      <label style="
+        font-size:0.85rem;
+        font-weight:bold;
+        cursor:pointer;
+      ">
+
+        <input
+          type="checkbox"
+          id="prepay-select-all"
+          onclick="toggleSelectAllPrepay(this)"
+        >
+
+        全選／全不選
+
+      </label>
+
+
+      <button
+        class="btn btn-secondary"
+        onclick="clearPrepayAmounts()"
+      >
+        ↺ 清除還本金額
+      </button>
+
+    </div>
+
+
+    <div class="prepay-header">
+
+      <div></div>
+
+      <div>
+        信貸項目
+      </div>
+
+      <div class="prepay-header-right">
+        提前還本金額
+      </div>
+
+    </div>
+
+
+    <div
+      id="prepay-loans-container"
+      style="margin-bottom:12px;"
+    ></div>
+
+
+    <button
+      class="btn btn-primary"
+      onclick="calcPrepayment()"
+    >
+      📊 開始計算提前還本效益
+    </button>
+
+
+    <div
+      id="prepay-result"
+      class="result-box"
+      style="display:none;"
+    ></div>
+
+  </div>
+
+
+  <!-- =========================
+       4. 整合轉貸
+  ========================== -->
+
+  <div class="card">
+
+    <h3>
+      4. 整合轉貸代償效益分析
+      <span style="color:var(--purple);">
+        （信貸＋信用卡）
+      </span>
+    </h3>
+
+
+    <p style="
+      color:#64748b;
+      font-size:0.85rem;
+      margin-bottom:10px;
+    ">
+
+      自動整合上方所有信貸剩餘本金與信用卡未繳卡費，
+      計算轉貸後月付金、總利息、開辦費、節省金額與損益兩平利率。
+
+    </p>
+
+
+    <div class="info-panel">
+
+      📌 <strong>V2.1 利率判斷：</strong>
+
+      系統會計算目前負債的加權平均利率，
+      並計算「損益兩平利率」。
+      新貸款實際利率若低於損益兩平利率，
+      理論上才具有總成本節省空間。
+
+    </div>
+
+
+    <div class="grid" style="margin-top:10px;">
+
+      <div class="form-group">
+
+        <label>
+          新轉貸開辦費／手續費（元）
+        </label>
+
+        <input
+          type="number"
+          id="refinance-fee"
+          value="9000"
+          min="0"
+        >
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label>
+          新轉貸期限（月）
+        </label>
+
+        <input
+          type="number"
+          id="refinance-months"
+          value="84"
+          min="1"
+        >
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label>
+          預期新利率（%）
+        </label>
+
+        <input
+          type="number"
+          step="0.01"
+          id="refinance-rate"
+          placeholder="例如：2.15"
+          min="0"
+        >
+
+      </div>
+
+
+      <div class="form-group" style="justify-content:flex-end;">
+
+        <button
+          class="btn btn-primary"
+          onclick="calcRefinance()"
+        >
+          📊 分析轉貸效益
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <div
+      id="refinance-result"
+      class="result-box"
+      style="display:none;"
+    ></div>
+
+  </div>
+
+</div>
+
+
+<!-- =========================
+     修改信貸
+========================== -->
+
+<div id="edit-modal" class="modal">
+
+  <div class="modal-content">
+
+    <h3 style="margin-bottom:12px;">
+      ✏️ 修改信貸資料
+    </h3>
+
+    <input
+      type="hidden"
+      id="edit-index"
+    >
+
+
+    <div class="form-group" style="margin-bottom:10px;">
+      <label>銀行名稱</label>
+      <input type="text" id="edit-bank">
+    </div>
+
+
+    <div class="form-group" style="margin-bottom:10px;">
+      <label>最新剩餘本金（元）</label>
+      <input type="number" id="edit-balance">
+    </div>
+
+
+    <div class="form-group" style="margin-bottom:10px;">
+      <label>年利率（%）</label>
+      <input type="number" step="0.01" id="edit-rate">
+    </div>
+
+
+    <div class="form-group" style="margin-bottom:10px;">
+      <label>最新剩餘期數（月）</label>
+      <input type="number" id="edit-months">
+    </div>
+
+
+    <div class="form-group" style="margin-bottom:16px;">
+      <label>每月繳款日</label>
+      <input type="number" min="1" max="31" id="edit-payDay">
+    </div>
+
+
+    <div style="
+      display:flex;
+      gap:8px;
+      justify-content:flex-end;
+    ">
+
+      <button
+        class="btn btn-secondary"
+        onclick="closeModal('edit-modal')"
+      >
+        取消
+      </button>
+
+      <button
+        class="btn btn-primary"
+        onclick="saveEdit()"
+      >
+        儲存更新
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- =========================
+     修改信用卡
+========================== -->
+
+<div id="edit-card-modal" class="modal">
+
+  <div class="modal-content">
+
+    <h3 style="margin-bottom:12px;">
+      ✏️ 修改信用卡資料
+    </h3>
+
+    <input
+      type="hidden"
+      id="edit-card-index"
+    >
+
+
+    <div class="form-group" style="margin-bottom:10px;">
+      <label>發卡銀行／卡名</label>
+      <input type="text" id="edit-card-bank">
+    </div>
+
+
+    <div class="form-group" style="margin-bottom:10px;">
+      <label>未繳卡費總額（元）</label>
+      <input type="number" id="edit-card-balance">
+    </div>
+
+
+    <div class="form-group" style="margin-bottom:10px;">
+      <label>循環年利率（%）</label>
+      <input type="number" step="0.01" id="edit-card-rate">
+    </div>
+
+
+    <div class="form-group" style="margin-bottom:10px;">
+      <label>最低應繳金額（元）</label>
+      <input type="number" id="edit-card-min">
+    </div>
+
+
+    <div class="form-group" style="margin-bottom:16px;">
+      <label>每月繳款截止日</label>
+      <input type="number" min="1" max="31" id="edit-card-payDay">
+    </div>
+
+
+    <div style="
+      display:flex;
+      gap:8px;
+      justify-content:flex-end;
+    ">
+
+      <button
+        class="btn btn-secondary"
+        onclick="closeModal('edit-card-modal')"
+      >
+        取消
+      </button>
+
+      <button
+        class="btn btn-primary"
+        onclick="saveCardEdit()"
+      >
+        儲存更新
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<script type="module">
+
+  /* =========================================================
+     Firebase
+  ========================================================= */
+
+  import {
+    initializeApp
+  }
+  from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+
+
+  import {
+    getDatabase,
+    ref,
+    set,
+    onValue
+  }
+  from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+
+  const firebaseConfig = {
+
+    apiKey:
+      "AIzaSyCWx0lVV819nGYeEyCJ9ZSbJhAUqGCO5Ro",
+
+    authDomain:
+      "loan-867b2.firebaseapp.com",
+
+    databaseURL:
+      "https://loan-867b2-default-rtdb.firebaseio.com",
+
+    projectId:
+      "loan-867b2",
+
+    storageBucket:
+      "loan-867b2.firebasestorage.app",
+
+    messagingSenderId:
+      "512494811629",
+
+    appId:
+      "1:512494811629:web:b7bd46a8c1314382850fe4",
+
+    measurementId:
+      "G-H4Z6EB2TL7"
+  };
+
+
+  const app = initializeApp(firebaseConfig);
+
+  const db = getDatabase(app);
+
+  const loansRef = ref(db, "loans");
+
+  const cardsRef = ref(db, "cards");
+
+
+  let loans = [];
+
+  let cards = [];
+
+
+  /* =========================================================
+     基本工具
+  ========================================================= */
+
+  function normalizeArray(value) {
+
+    if (Array.isArray(value)) {
+      return value;
+    }
+
+    if (value && typeof value === "object") {
+      return Object.values(value);
+    }
+
+    return [];
+  }
+
+
+  function money(value) {
+
+    return Math.round(Number(value) || 0)
+      .toLocaleString("zh-TW");
+
+  }
+
+
+  function num(value) {
+
+    return Number(value) || 0;
+
+  }
+
+
+  function escapeHtml(value) {
+
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+
+  }
+
+
+  /* =========================================================
+     PMT
+  ========================================================= */
+
+  function calcPMT(p, annualRate, months) {
+
+    p = Number(p) || 0;
+
+    annualRate = Number(annualRate) || 0;
+
+    months = Number(months) || 0;
+
+
+    if (months <= 0) {
+      return 0;
+    }
+
+
+    const monthlyRate =
+      (annualRate / 100) / 12;
+
+
+    if (monthlyRate === 0) {
+      return p / months;
+    }
+
+
+    return p *
+      (
+        monthlyRate *
+        Math.pow(
+          1 + monthlyRate,
+          months
+        )
+      ) /
+      (
+        Math.pow(
+          1 + monthlyRate,
+          months
+        ) - 1
+      );
+
+  }
+
+
+  /* =========================================================
+     Google Calendar
+  ========================================================= */
+
+  function buildGoogleCalendarUrl(
+    titlePrefix,
+    bank,
+    payDay,
+    pmt
+  ) {
+
+    const now = new Date();
+
+    let year = now.getFullYear();
+
+    let month = now.getMonth();
+
+
+    if (now.getDate() > Number(payDay)) {
+      month++;
+    }
+
+
+    const eventDate =
+      new Date(
+        year,
+        month,
+        Number(payDay)
+      );
+
+
+    const yyyy =
+      eventDate.getFullYear();
+
+
+    const mm =
+      String(
+        eventDate.getMonth() + 1
+      ).padStart(2, "0");
+
+
+    const dd =
+      String(
+        eventDate.getDate()
+      ).padStart(2, "0");
+
+
+    /*
+      Google Calendar 全天事件：
+      結束日期使用隔天
+    */
+
+    const endDate =
+      new Date(eventDate);
+
+    endDate.setDate(
+      endDate.getDate() + 1
+    );
+
+
+    const endYYYY =
+      endDate.getFullYear();
+
+
+    const endMM =
+      String(
+        endDate.getMonth() + 1
+      ).padStart(2, "0");
+
+
+    const endDD =
+      String(
+        endDate.getDate()
+      ).padStart(2, "0");
+
+
+    const dateStr =
+      `${yyyy}${mm}${dd}`;
+
+
+    const endDateStr =
+      `${endYYYY}${endMM}${endDD}`;
+
+
+    const title =
+      encodeURIComponent(
+        `[${titlePrefix}] ${bank}`
+      );
+
+
+    const details =
+      encodeURIComponent(
+        `預計應繳金額：NT$ ${money(pmt)}\n` +
+        `請務必於期限內繳清，以避免產生違約金或額外利息。`
+      );
+
+
+    return (
+      `https://calendar.google.com/calendar/render` +
+      `?action=TEMPLATE` +
+      `&text=${title}` +
+      `&dates=${dateStr}/${endDateStr}` +
+      `&details=${details}` +
+      `&recur=RRULE:FREQ=MONTHLY`
+    );
+
+  }
+
+
+  /* =========================================================
+     Firebase 監聽
+  ========================================================= */
+
+  onValue(
+    loansRef,
+    (snapshot) => {
+
+      loans =
+        normalizeArray(
+          snapshot.val()
+        );
+
+      render();
+
+      hideLoading();
+
+    },
+    (error) => {
+
+      console.error(
+        "Loans Firebase Error:",
+        error
+      );
+
+      hideLoading();
+
+      alert(
+        "無法讀取信貸資料，請確認 Firebase Database Rules。"
+      );
+
+    }
+  );
+
+
+  onValue(
+    cardsRef,
+    (snapshot) => {
+
+      cards =
+        normalizeArray(
+          snapshot.val()
+        );
+
+      render();
+
+      hideLoading();
+
+    },
+    (error) => {
+
+      console.error(
+        "Cards Firebase Error:",
+        error
+      );
+
+    }
+  );
+
+
+  function hideLoading() {
+
+    const loading =
+      document.getElementById("loading");
+
+    if (loading) {
+      loading.style.display = "none";
+    }
+
+  }
+
+
+  /* =========================================================
+     主畫面 Render
+  ========================================================= */
+
+  function render() {
+
+    renderLoans();
+
+    renderCards();
+
+    renderSummary();
+
+    renderPrepayLoansList();
+
+  }
+
+
+  /* =========================================================
+     信貸 Render
+  ========================================================= */
+
+  function renderLoans() {
+
+    const tbody =
+      document.getElementById("loan-list");
+
+
+    tbody.innerHTML = "";
+
+
+    loans.forEach(
+      (item, index) => {
+
+        const balance =
+          num(item.balance);
+
+        const rate =
+          num(item.rate);
+
+        const months =
+          num(item.months);
+
+        const payDay =
+          num(item.payDay);
+
+
+        const pmt =
+          calcPMT(
+            balance,
+            rate,
+            months
+          );
+
+
+        const interest =
+          Math.max(
+            0,
+            (pmt * months) - balance
+          );
+
+
+        const firstMonthInterest =
+          balance *
+          (rate / 100) /
+          12;
+
+
+        const calUrl =
+          buildGoogleCalendarUrl(
+            "信貸扣款提醒",
+            item.bank,
+            payDay,
+            pmt
+          );
+
+
+        tbody.innerHTML += `
+
+          <tr>
+
+            <td>
+              <strong>
+                ${escapeHtml(item.bank)}
+              </strong>
+            </td>
+
+            <td>
+              NT$ ${money(balance)}
+            </td>
+
+            <td>
+              ${rate.toFixed(2)}%
+            </td>
+
+            <td>
+              ${months} 個月
+            </td>
+
+            <td style="color:var(--danger);">
+              NT$ ${money(firstMonthInterest)}
+            </td>
+
+            <td style="color:var(--danger);">
+              NT$ ${money(interest)}
+            </td>
+
+            <td>
+              每月 ${payDay} 日
+            </td>
+
+            <td>
+              NT$ ${money(pmt)}
+            </td>
+
+            <td style="white-space:nowrap;">
+
+              <button
+                class="btn btn-edit"
+                onclick="openEditModal(${index})"
+              >
+                ✏️ 修改
+              </button>
+
+              <a
+                href="${calUrl}"
+                target="_blank"
+                class="btn btn-cal"
+              >
+                📅 日曆
+              </a>
+
+              <button
+                class="btn btn-danger"
+                onclick="deleteLoan(${index})"
+              >
+                刪除
+              </button>
+
+            </td>
+
+          </tr>
+
+        `;
+
+      }
+    );
+
+  }
+
+
+  /* =========================================================
+     信用卡 Render
+  ========================================================= */
+
+  function renderCards() {
+
+    const tbody =
+      document.getElementById("card-list");
+
+
+    tbody.innerHTML = "";
+
+
+    cards.forEach(
+      (item, index) => {
+
+        const balance =
+          num(item.balance);
+
+        const rate =
+          num(item.rate);
+
+        const minPay =
+          num(item.minPay);
+
+        const payDay =
+          num(item.payDay);
+
+
+        const monthlyInterest =
+          balance *
+          (rate / 100) /
+          12;
+
+
+        const calUrl =
+          buildGoogleCalendarUrl(
+            "信用卡繳款提醒",
+            item.bank,
+            payDay,
+            minPay
+          );
+
+
+        tbody.innerHTML += `
+
+          <tr>
+
+            <td>
+              <strong>
+                ${escapeHtml(item.bank)}
+              </strong>
+            </td>
+
+            <td>
+              NT$ ${money(balance)}
+            </td>
+
+            <td style="color:var(--danger);">
+              ${rate.toFixed(2)}%
+            </td>
+
+            <td style="color:var(--danger);">
+              NT$ ${money(monthlyInterest)}
+            </td>
+
+            <td>
+              NT$ ${money(minPay)}
+            </td>
+
+            <td>
+              每月 ${payDay} 日
+            </td>
+
+            <td style="white-space:nowrap;">
+
+              <button
+                class="btn btn-edit"
+                onclick="openCardEditModal(${index})"
+              >
+                ✏️ 修改
+              </button>
+
+              <a
+                href="${calUrl}"
+                target="_blank"
+                class="btn btn-cal"
+              >
+                📅 日曆
+              </a>
+
+              <button
+                class="btn btn-danger"
+                onclick="deleteCard(${index})"
+              >
+                刪除
+              </button>
+
+            </td>
+
+          </tr>
+
+        `;
+
+      }
+    );
+
+  }
+
+
+  /* =========================================================
+     Summary
+  ========================================================= */
+
+  function renderSummary() {
+
+    let totalBal = 0;
+
+    let totalPmt = 0;
+
+    let totalInterest = 0;
+
+    let monthlyInterestSum = 0;
+
+    let weightedRateSum = 0;
+
+
+    /* 信貸 */
+
+    loans.forEach(
+      (item) => {
+
+        const balance =
+          num(item.balance);
+
+        const rate =
+          num(item.rate);
+
+        const months =
+          num(item.months);
+
+
+        const pmt =
+          calcPMT(
+            balance,
+            rate,
+            months
+          );
+
+
+        const interest =
+          Math.max(
+            0,
+            (pmt * months) - balance
+          );
+
+
+        const firstMonthInterest =
+          balance *
+          (rate / 100) /
+          12;
+
+
+        totalBal += balance;
+
+        totalPmt += pmt;
+
+        totalInterest += interest;
+
+        monthlyInterestSum +=
+          firstMonthInterest;
+
+        weightedRateSum +=
+          balance * rate;
+
+      }
+    );
+
+
+    /* 信用卡 */
+
+    cards.forEach(
+      (item) => {
+
+        const balance =
+          num(item.balance);
+
+        const rate =
+          num(item.rate);
+
+        const minPay =
+          num(item.minPay);
+
+
+        const monthlyInterest =
+          balance *
+          (rate / 100) /
+          12;
+
+
+        totalBal += balance;
+
+        totalPmt += minPay;
+
+        monthlyInterestSum +=
+          monthlyInterest;
+
+        weightedRateSum +=
+          balance * rate;
+
+      }
+    );
+
+
+    const avgRate =
+      totalBal > 0
+        ? weightedRateSum / totalBal
+        : 0;
+
+
+    document.getElementById(
+      "total-bal"
+    ).textContent =
+      `NT$ ${money(totalBal)}`;
+
+
+    document.getElementById(
+      "monthly-interest"
+    ).textContent =
+      `NT$ ${money(monthlyInterestSum)}`;
+
+
+    document.getElementById(
+      "total-interest"
+    ).textContent =
+      `NT$ ${money(totalInterest)}`;
+
+
+    document.getElementById(
+      "total-pmt"
+    ).textContent =
+      `NT$ ${money(totalPmt)}`;
+
+
+    document.getElementById(
+      "avg-rate"
+    ).textContent =
+      `${avgRate.toFixed(2)}%`;
+
+  }
+
+
+  /* =========================================================
+     提前還本清單
+  ========================================================= */
+
+  function renderPrepayLoansList() {
+
+    const container =
+      document.getElementById(
+        "prepay-loans-container"
+      );
+
+
+    container.innerHTML = "";
+
+
+    if (loans.length === 0) {
+
+      container.innerHTML = `
+
+        <div style="
+          color:#64748b;
+          font-size:0.85rem;
+          padding:15px;
+        ">
+          尚無信貸項目，請先新增信貸。
+        </div>
+
+      `;
+
+      return;
+    }
+
+
+    loans.forEach(
+      (item, index) => {
+
+        const balance =
+          num(item.balance);
+
+
+        container.innerHTML += `
+
+          <div class="prepay-item">
+
+            <!-- Checkbox -->
+
+            <input
+              type="checkbox"
+              class="prepay-chk"
+              value="${index}"
+              onchange="autoDistributePool()"
+            >
+
+
+            <!-- 銀行與本金 -->
+
+            <div class="prepay-info">
+
+              <span class="prepay-bank">
+                ${escapeHtml(item.bank)}
+              </span>
+
+              <span class="prepay-balance">
+                剩餘本金：NT$ ${money(balance)}
+              </span>
+
+            </div>
+
+
+            <!-- 還本金額 -->
+
+            <div class="prepay-amount-box">
+
+              <span class="prepay-amount-label">
+                還本金額：
+              </span>
+
+              <input
+                type="number"
+                class="prepay-amt-input"
+                id="prepay-amt-${index}"
+                placeholder="0"
+                min="0"
+                max="${balance}"
+                step="1"
+              >
+
+            </div>
+
+          </div>
+
+        `;
+
+      }
+    );
+
+  }
+
+
+  /* =========================================================
+     全選
+  ========================================================= */
+
+  window.toggleSelectAllPrepay =
+    function(master) {
+
+      const checkboxes =
+        document.querySelectorAll(
+          ".prepay-chk"
+        );
+
+
+      checkboxes.forEach(
+        chk => {
+
+          chk.checked =
+            master.checked;
+
+        }
+      );
+
+
+      autoDistributePool();
+
+    };
+
+
+  /* =========================================================
+     提前還本自動分配
+  ========================================================= */
+
+  window.autoDistributePool =
+    function() {
+
+      const pool =
+        parseFloat(
+          document.getElementById(
+            "prepay-total-pool"
+          ).value
+        );
+
+
+      const selected =
+        Array.from(
+          document.querySelectorAll(
+            ".prepay-chk:checked"
+          )
+        );
+
+
+      /*
+        沒有選擇貸款
+      */
+
+      if (
+        selected.length === 0 ||
+        isNaN(pool) ||
+        pool <= 0
+      ) {
+
+        return;
+
+      }
+
+
+      let selectedBalanceSum = 0;
+
+
+      selected.forEach(
+        chk => {
+
+          const idx =
+            parseInt(
+              chk.value
+            );
+
+
+          selectedBalanceSum +=
+            num(
+              loans[idx].balance
+            );
+
+        }
+      );
+
+
+      if (selectedBalanceSum <= 0) {
+        return;
+      }
+
+
+      /*
+        第一階段：
+        按本金比例計算
+      */
+
+      let allocations = [];
+
+      let allocatedTotal = 0;
+
+
+      selected.forEach(
+        chk => {
+
+          const idx =
+            parseInt(
+              chk.value
+            );
+
+
+          const balance =
+            num(
+              loans[idx].balance
+            );
+
+
+          const raw =
+            (balance /
+              selectedBalanceSum) *
+            pool;
+
+
+          const amount =
+            Math.floor(raw);
+
+
+          allocations.push({
+            idx,
+            amount,
+            fraction:
+              raw - amount,
+            balance
+          });
+
+
+          allocatedTotal +=
+            amount;
+
+        }
+      );
+
+
+      /*
+        剩餘 1 元逐筆補
+      */
+
+      let remainder =
+        Math.round(pool) -
+        allocatedTotal;
+
+
+      allocations.sort(
+        (a, b) =>
+          b.fraction -
+          a.fraction
+      );
+
+
+      while (
+        remainder > 0 &&
+        allocations.length > 0
+      ) {
+
+        let changed = false;
+
+
+        for (
+          let i = 0;
+          i < allocations.length &&
+          remainder > 0;
+          i++
+        ) {
+
+          const item =
+            allocations[i];
+
+
+          if (
+            item.amount <
+            item.balance
+          ) {
+
+            item.amount++;
+
+            remainder--;
+
+            changed = true;
+
+          }
+
+        }
+
+
+        if (!changed) {
+          break;
+        }
+
+      }
+
+
+      /*
+        寫入畫面
+      */
+
+      allocations.forEach(
+        item => {
+
+          const input =
+            document.getElementById(
+              `prepay-amt-${item.idx}`
+            );
+
+
+          if (input) {
+
+            input.value =
+              item.amount;
+
+          }
+
+        }
+      );
+
+    };
+
+
+  /* =========================================================
+     清除提前還款
+  ========================================================= */
+
+  window.clearPrepayAmounts =
+    function() {
+
+      document
+        .querySelectorAll(
+          ".prepay-amt-input"
+        )
+        .forEach(
+          input => {
+            input.value = "";
+          }
+        );
+
+
+      document.getElementById(
+        "prepay-total-pool"
+      ).value = "";
+
+
+      document.getElementById(
+        "prepay-result"
+      ).style.display = "none";
+
+    };
+
+
+  /* =========================================================
+     新增信貸
+  ========================================================= */
+
+  document
+    .getElementById("loan-form")
+    .addEventListener(
+      "submit",
+      async (e) => {
+
+        e.preventDefault();
+
+
+        const bank =
+          document.getElementById(
+            "bank"
+          ).value.trim();
+
+
+        const balance =
+          parseFloat(
+            document.getElementById(
+              "balance"
+            ).value
+          );
+
+
+        const rate =
+          parseFloat(
+            document.getElementById(
+              "rate"
+            ).value
+          );
+
+
+        const months =
+          parseInt(
+            document.getElementById(
+              "months"
+            ).value
+          );
+
+
+        const payDay =
+          parseInt(
+            document.getElementById(
+              "payDay"
+            ).value
+          );
+
+
+        if (
+          !bank ||
+          balance < 0 ||
+          rate < 0 ||
+          months <= 0 ||
+          payDay < 1 ||
+          payDay > 31
+        ) {
+
+          alert(
+            "請確認信貸資料是否正確。"
+          );
+
+          return;
+
+        }
+
+
+        loans.push({
+
+          bank,
+
+          balance,
+
+          rate,
+
+          months,
+
+          payDay
+
+        });
+
+
+        try {
+
+          await set(
+            loansRef,
+            loans
+          );
+
+
+          e.target.reset();
+
+        } catch (error) {
+
+          console.error(error);
+
+          alert(
+            "資料儲存失敗，請確認 Firebase 設定。"
+          );
+
+        }
+
+      }
+    );
+
+
+  /* =========================================================
+     刪除信貸
+  ========================================================= */
+
+  window.deleteLoan =
+    async function(index) {
+
+      if (
+        !confirm(
+          "確定要刪除這筆信貸資料嗎？"
+        )
+      ) {
+
+        return;
+
+      }
+
+
+      loans.splice(
+        index,
+        1
+      );
+
+
+      try {
+
+        await set(
+          loansRef,
+          loans
+        );
+
+      } catch (error) {
+
+        console.error(error);
+
+        alert(
+          "刪除失敗。"
+        );
+
+      }
+
+    };
+
+
+  /* =========================================================
+     新增信用卡
+  ========================================================= */
+
+  document
+    .getElementById("card-form")
+    .addEventListener(
+      "submit",
+      async (e) => {
+
+        e.preventDefault();
+
+
+        const bank =
+          document.getElementById(
+            "card-bank"
+          ).value.trim();
+
+
+        const balance =
+          parseFloat(
+            document.getElementById(
+              "card-balance"
+            ).value
+          );
+
+
+        const rate =
+          parseFloat(
+            document.getElementById(
+              "card-rate"
+            ).value
+          );
+
+
+        const minPay =
+          parseFloat(
+            document.getElementById(
+              "card-min"
+            ).value
+          );
+
+
+        const payDay =
+          parseInt(
+            document.getElementById(
+              "card-payDay"
+            ).value
+          );
+
+
+        if (
+          !bank ||
+          balance < 0 ||
+          rate < 0 ||
+          minPay < 0 ||
+          payDay < 1 ||
+          payDay > 31
+        ) {
+
+          alert(
+            "請確認信用卡資料是否正確。"
+          );
+
+          return;
+
+        }
+
+
+        cards.push({
+
+          bank,
+
+          balance,
+
+          rate,
+
+          minPay,
+
+          payDay
+
+        });
+
+
+        try {
+
+          await set(
+            cardsRef,
+            cards
+          );
+
+
+          e.target.reset();
+
+        } catch (error) {
+
+          console.error(error);
+
+          alert(
+            "資料儲存失敗。"
+          );
+
+        }
+
+      }
+    );
+
+
+  /* =========================================================
+     刪除信用卡
+  ========================================================= */
+
+  window.deleteCard =
+    async function(index) {
+
+      if (
+        !confirm(
+          "確定要刪除這筆信用卡資料嗎？"
+        )
+      ) {
+
+        return;
+
+      }
+
+
+      cards.splice(
+        index,
+        1
+      );
+
+
+      try {
+
+        await set(
+          cardsRef,
+          cards
+        );
+
+      } catch (error) {
+
+        console.error(error);
+
+        alert(
+          "刪除失敗。"
+        );
+
+      }
+
+    };
+
+
+  /* =========================================================
+     Modal
+  ========================================================= */
+
+  window.closeModal =
+    function(id) {
+
+      document.getElementById(
+        id
+      ).style.display = "none";
+
+    };
+
+
+  /* =========================================================
+     開啟信貸修改
+  ========================================================= */
+
+  window.openEditModal =
+    function(index) {
+
+      const item =
+        loans[index];
+
+
+      if (!item) {
+        return;
+      }
+
+
+      document.getElementById(
+        "edit-index"
+      ).value = index;
+
+
+      document.getElementById(
+        "edit-bank"
+      ).value =
+        item.bank;
+
+
+      document.getElementById(
+        "edit-balance"
+      ).value =
+        item.balance;
+
+
+      document.getElementById(
+        "edit-rate"
+      ).value =
+        item.rate;
+
+
+      document.getElementById(
+        "edit-months"
+      ).value =
+        item.months;
+
+
+      document.getElementById(
+        "edit-payDay"
+      ).value =
+        item.payDay;
+
+
+      document.getElementById(
+        "edit-modal"
+      ).style.display = "flex";
+
+    };
+
+
+  /* =========================================================
+     儲存信貸修改
+  ========================================================= */
+
+  window.saveEdit =
+    async function() {
+
+      const idx =
+        parseInt(
+          document.getElementById(
+            "edit-index"
+          ).value
+        );
+
+
+      loans[idx] = {
+
+        bank:
+          document.getElementById(
+            "edit-bank"
+          ).value.trim(),
+
+        balance:
+          parseFloat(
+            document.getElementById(
+              "edit-balance"
+            ).value
+          ),
+
+        rate:
+          parseFloat(
+            document.getElementById(
+              "edit-rate"
+            ).value
+          ),
+
+        months:
+          parseInt(
+            document.getElementById(
+              "edit-months"
+            ).value
+          ),
+
+        payDay:
+          parseInt(
+            document.getElementById(
+              "edit-payDay"
+            ).value
+          )
+
+      };
+
+
+      try {
+
+        await set(
+          loansRef,
+          loans
+        );
+
+
+        closeModal(
+          "edit-modal"
+        );
+
+      } catch (error) {
+
+        console.error(error);
+
+        alert(
+          "更新失敗。"
+        );
+
+      }
+
+    };
+
+
+  /* =========================================================
+     開啟信用卡修改
+  ========================================================= */
+
+  window.openCardEditModal =
+    function(index) {
+
+      const item =
+        cards[index];
+
+
+      if (!item) {
+        return;
+      }
+
+
+      document.getElementById(
+        "edit-card-index"
+      ).value = index;
+
+
+      document.getElementById(
+        "edit-card-bank"
+      ).value =
+        item.bank;
+
+
+      document.getElementById(
+        "edit-card-balance"
+      ).value =
+        item.balance;
+
+
+      document.getElementById(
+        "edit-card-rate"
+      ).value =
+        item.rate;
+
+
+      document.getElementById(
+        "edit-card-min"
+      ).value =
+        item.minPay;
+
+
+      document.getElementById(
+        "edit-card-payDay"
+      ).value =
+        item.payDay;
+
+
+      document.getElementById(
+        "edit-card-modal"
+      ).style.display = "flex";
+
+    };
+
+
+  /* =========================================================
+     儲存信用卡修改
+  ========================================================= */
+
+  window.saveCardEdit =
+    async function() {
+
+      const idx =
+        parseInt(
+          document.getElementById(
+            "edit-card-index"
+          ).value
+        );
+
+
+      cards[idx] = {
+
+        bank:
+          document.getElementById(
+            "edit-card-bank"
+          ).value.trim(),
+
+        balance:
+          parseFloat(
+            document.getElementById(
+              "edit-card-balance"
+            ).value
+          ),
+
+        rate:
+          parseFloat(
+            document.getElementById(
+              "edit-card-rate"
+            ).value
+          ),
+
+        minPay:
+          parseFloat(
+            document.getElementById(
+              "edit-card-min"
+            ).value
+          ),
+
+        payDay:
+          parseInt(
+            document.getElementById(
+              "edit-card-payDay"
+            ).value
+          )
+
+      };
+
+
+      try {
+
+        await set(
+          cardsRef,
+          cards
+        );
+
+
+        closeModal(
+          "edit-card-modal"
+        );
+
+      } catch (error) {
+
+        console.error(error);
+
+        alert(
+          "更新失敗。"
+        );
+
+      }
+
+    };
+
+
+  /* =========================================================
+     提前還本試算
+  ========================================================= */
+
+  window.calcPrepayment =
+    function() {
+
+      const selectedChks =
+        document.querySelectorAll(
+          ".prepay-chk:checked"
+        );
+
+
+      if (
+        selectedChks.length === 0
+      ) {
+
+        alert(
+          "請至少勾選一筆要進行試算的信貸項目。"
+        );
+
+        return;
+
+      }
+
+
+      let totalPrepayAmount = 0;
+
+      let totalMonthlySaved = 0;
+
+      let totalInterestSaved = 0;
+
+      let detailsHtml = "";
+
+      let hasError = false;
+
+
+      selectedChks.forEach(
+        chk => {
+
+          const idx =
+            parseInt(
+              chk.value
+            );
+
+
+          const item =
+            loans[idx];
+
+
+          const prepayAmt =
+            parseFloat(
+              document.getElementById(
+                `prepay-amt-${idx}`
+              ).value
+            ) || 0;
+
+
+          if (prepayAmt <= 0) {
+            return;
+          }
+
+
+          const balance =
+            num(item.balance);
+
+
+          /*
+            提前還本不能大於等於本金
+          */
+
+          if (
+            prepayAmt >= balance
+          ) {
+
+            alert(
+              `【${item.bank}】提前還本金額 NT$ ${money(prepayAmt)} ` +
+              `不得大於或等於剩餘本金 NT$ ${money(balance)}。`
+            );
+
+            hasError = true;
+
+            return;
+
+          }
+
+
+          const origPmt =
+            calcPMT(
+              balance,
+              item.rate,
+              item.months
+            );
+
+
+          const origTotalInterest =
+            Math.max(
+              0,
+              origPmt *
+              item.months -
+              balance
+            );
+
+
+          const newBal =
+            balance -
+            prepayAmt;
+
+
+          /*
+            假設提前還本後：
+            剩餘期數不變，
+            月付金重新計算。
+          */
+
+          const newPmt =
+            calcPMT(
+              newBal,
+              item.rate,
+              item.months
+            );
+
+
+          const newTotalInterest =
+            Math.max(
+              0,
+              newPmt *
+              item.months -
+              newBal
+            );
+
+
+          const savedInterest =
+            Math.max(
+              0,
+              origTotalInterest -
+              newTotalInterest
+            );
+
+
+          const monthlySavedPmt =
+            Math.max(
+              0,
+              origPmt -
+              newPmt
+            );
+
+
+          totalPrepayAmount +=
+            prepayAmt;
+
+
+          totalMonthlySaved +=
+            monthlySavedPmt;
+
+
+          totalInterestSaved +=
+            savedInterest;
+
+
+          detailsHtml += `
+
+            • <strong>
+              ${escapeHtml(item.bank)}
+            </strong>
+
+            ：提前還本
+            NT$ ${money(prepayAmt)}
+
+            → 每月少繳
+            NT$ ${money(monthlySavedPmt)}
+
+            → 預估省息
+            NT$ ${money(savedInterest)}
+
+            <br>
+
+          `;
+
+        }
+      );
+
+
+      if (hasError) {
+        return;
+      }
+
+
+      if (
+        totalPrepayAmount <= 0
+      ) {
+
+        alert(
+          "請為已勾選的信貸輸入有效的還本金額。"
+        );
+
+        return;
+
+      }
+
+
+      const resBox =
+        document.getElementById(
+          "prepay-result"
+        );
+
+
+      resBox.style.display =
+        "block";
+
+
+      resBox.innerHTML = `
+
+        <strong>
+          💡 多筆提前還本效益分析
+        </strong>
+
+        <br><br>
+
+        • 本次試算總投入資金：
+
+        <strong>
+          NT$ ${money(totalPrepayAmount)}
+        </strong>
+
+        <br>
+
+        • 每月總負債負擔減輕：
+
+        <strong
+          style="color:var(--primary);"
+        >
+          NT$ ${money(totalMonthlySaved)}
+        </strong>
+        ／月
+
+        <br>
+
+        • 未來預估節省利息：
+
+        <strong
+          style="color:var(--success);"
+        >
+          NT$ ${money(totalInterestSaved)}
+        </strong>
+
+        <hr
+          style="
+            margin:10px 0;
+            border:none;
+            border-top:1px dashed #bbf7d0;
+          "
+        >
+
+        <div
+          style="
+            font-size:0.85rem;
+            color:#334155;
+          "
+        >
+          ${detailsHtml}
+        </div>
+
+      `;
+
+    };
+
+
+  /* =========================================================
+     找出目前所有負債
+  ========================================================= */
+
+  function getDebtSummary() {
+
+    let loanBal = 0;
+
+    let cardBal = 0;
+
+    let loanTotalCost = 0;
+
+    let loanInterest = 0;
+
+    let weightedRateNumerator = 0;
+
+
+    loans.forEach(
+      item => {
+
+        const balance =
+          num(item.balance);
+
+        const rate =
+          num(item.rate);
+
+        const months =
+          num(item.months);
+
+
+        const pmt =
+          calcPMT(
+            balance,
+            rate,
+            months
+          );
+
+
+        const totalCost =
+          pmt *
+          months;
+
+
+        loanBal +=
+          balance;
+
+
+        loanTotalCost +=
+          totalCost;
+
+
+        loanInterest +=
+          Math.max(
+            0,
+            totalCost -
+            balance
+          );
+
+
+        weightedRateNumerator +=
+          balance *
+          rate;
+
+      }
+    );
+
+
+    cards.forEach(
+      item => {
+
+        const balance =
+          num(item.balance);
+
+        const rate =
+          num(item.rate);
+
+
+        cardBal +=
+          balance;
+
+
+        /*
+          信用卡未指定剩餘期數，
+          因此原始成本以目前卡費本金計算，
+          不把最低繳款無限期展開。
+        */
+
+        weightedRateNumerator +=
+          balance *
+          rate;
+
+      }
+    );
+
+
+    const totalBal =
+      loanBal +
+      cardBal;
+
+
+    const avgRate =
+      totalBal > 0
+        ? weightedRateNumerator /
+          totalBal
+        : 0;
+
+
+    return {
+
+      loanBal,
+
+      cardBal,
+
+      totalBal,
+
+      loanTotalCost,
+
+      loanInterest,
+
+      avgRate
+
+    };
+
+  }
+
+
+  /* =========================================================
+     轉貸損益兩平利率
+  ========================================================= */
+
+  function findBreakEvenRate(
+    principal,
+    months,
+    originalCost,
+    fee
+  ) {
+
+    /*
+      找出新貸總支出 =
+      原本總成本
+
+      new PMT * months + fee
+      = originalCost
+
+      使用二分搜尋，比原本
+      0.01% 一直跑到 20% 更精準。
+    */
+
+
+    if (
+      principal <= 0 ||
+      months <= 0
+    ) {
+
+      return null;
+
+    }
+
+
+    const target =
+      originalCost -
+      fee;
+
+
+    /*
+      如果光本金＋費用就超過原始成本，
+      代表沒有任何正利率可以划算。
+    */
+
+    if (
+      target <= principal
+    ) {
+
+      return 0;
+
+    }
+
+
+    let low = 0;
+
+    let high = 50;
+
+
+    for (
+      let i = 0;
+      i < 100;
+      i++
+    ) {
+
+      const mid =
+        (low + high) / 2;
+
+
+      const pmt =
+        calcPMT(
+          principal,
+          mid,
+          months
+        );
+
+
+      const totalCost =
+        pmt *
+        months;
+
+
+      if (
+        totalCost > target
+      ) {
+
+        high = mid;
+
+      } else {
+
+        low = mid;
+
+      }
+
+    }
+
+
+    return low;
+
+  }
+
+
+  /* =========================================================
+     轉貸分析
+  ========================================================= */
+
+  window.calcRefinance =
+    function() {
+
+      const summary =
+        getDebtSummary();
+
+
+      const totalBal =
+        summary.totalBal;
+
+
+      if (
+        totalBal <= 0
+      ) {
+
+        alert(
+          "請先新增至少一筆信貸或信用卡資料。"
+        );
+
+        return;
+
+      }
+
+
+      const fee =
+        parseFloat(
+          document.getElementById(
+            "refinance-fee"
+          ).value
+        ) || 0;
+
+
+      const newMonths =
+        parseInt(
+          document.getElementById(
+            "refinance-months"
+          ).value
+        ) || 84;
+
+
+      const newRate =
+        parseFloat(
+          document.getElementById(
+            "refinance-rate"
+          ).value
+        );
+
+
+      if (
+        newMonths <= 0
+      ) {
+
+        alert(
+          "新轉貸期限必須大於 0。"
+        );
+
+        return;
+
+      }
+
+
+      /*
+        原始總成本：
+
+        信貸：
+        剩餘本金＋剩餘期間利息
+
+        信用卡：
+        目前卡費本金
+
+        注意：
+        信用卡沒有輸入剩餘期數，
+        所以此處不假設最低繳款需要多少年。
+      */
+
+      const originalCost =
+        summary.loanTotalCost +
+        summary.cardBal;
+
+
+      const breakEvenRate =
+        findBreakEvenRate(
+          totalBal,
+          newMonths,
+          originalCost,
+          fee
+        );
+
+
+      /*
+        建議利率
+
+        這裡提供兩個指標：
+
+        1. 損益兩平最高利率
+        2. 建議目標利率
+
+        建議目標利率採：
+        目前加權平均利率與損益兩平利率
+        中較低者。
+
+        這樣不會因為原始負債中
+        信用卡高利率造成判斷失真。
+      */
+
+      let recommendedRate =
+        breakEvenRate;
+
+
+      if (
+        summary.avgRate > 0 &&
+        breakEvenRate !== null
+      ) {
+
+        recommendedRate =
+          Math.min(
+            summary.avgRate,
+            breakEvenRate
+          );
+
+      }
+
+
+      /*
+        若損益兩平利率存在，
+        建議談判目標可以再低一些。
+
+        這裡使用 0.30 個百分點
+        作為安全緩衝。
+      */
+
+      const targetRate =
+        Math.max(
+          0,
+          recommendedRate - 0.30
+        );
+
+
+      let html = `
+
+        <strong>
+          📊 整合轉貸代償效益分析 V2.1
+        </strong>
+
+        <div class="refinance-summary">
+
+          <div class="refi-box">
+
+            <div class="refi-label">
+              信貸剩餘本金
+            </div>
+
+            <div class="refi-value">
+              NT$ ${money(summary.loanBal)}
+            </div>
+
+          </div>
+
+
+          <div class="refi-box">
+
+            <div class="refi-label">
+              信用卡未繳卡費
+            </div>
+
+            <div class="refi-value">
+              NT$ ${money(summary.cardBal)}
+            </div>
+
+          </div>
+
+
+          <div class="refi-box">
+
+            <div class="refi-label">
+              整合總金額
+            </div>
+
+            <div
+              class="refi-value"
+              style="color:var(--primary);"
+            >
+              NT$ ${money(totalBal)}
+            </div>
+
+          </div>
+
+
+          <div class="refi-box">
+
+            <div class="refi-label">
+              目前加權平均利率
+            </div>
+
+            <div
+              class="refi-value"
+              style="color:var(--warning);"
+            >
+              ${summary.avgRate.toFixed(2)}%
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="recommend-rate">
+
+          <div
+            style="
+              font-size:0.85rem;
+              color:#475569;
+            "
+          >
+            ⭐ 建議轉貸利率
+          </div>
+
+          <div class="rate-highlight">
+            ${targetRate.toFixed(2)}%
+          </div>
+
+          <div
+            style="
+              margin-top:5px;
+              font-size:0.82rem;
+              color:#475569;
+            "
+          >
+            建議實際談到約
+            <strong>
+              ${targetRate.toFixed(2)}%
+            </strong>
+            或以下，
+            會比單純達到損益兩平更有安全空間。
+          </div>
+
+        </div>
+
+      `;
+
+
+      if (
+        breakEvenRate === null
+      ) {
+
+        html += `
+
+          <div class="danger-box">
+
+            ⚠️ 目前條件下無法找到合理的損益兩平利率。
+
+            即使新貸款利率接近 0%，
+            加上開辦費後仍可能無法低於目前負債成本。
+
+          </div>
+
+        `;
+
+      } else {
+
+        html += `
+
+          <div class="recommend-rate">
+
+            <div
+              style="
+                font-size:0.85rem;
+                color:#475569;
+              "
+            >
+              🎯 損益兩平最高利率
+            </div>
+
+            <div class="rate-highlight">
+              ${breakEvenRate.toFixed(2)}%
+            </div>
+
+            <div
+              style="
+                margin-top:5px;
+                font-size:0.82rem;
+                color:#475569;
+              "
+            >
+
+              新轉貸實際利率：
+
+              <strong>
+                低於 ${breakEvenRate.toFixed(2)}%
+              </strong>
+
+              才能產生理論上的總成本節省。
+
+            </div>
+
+          </div>
+
+        `;
+
+      }
+
+
+      /*
+        有輸入預期利率
+      */
+
+      if (
+        !isNaN(newRate)
+      ) {
+
+        const newPmt =
+          calcPMT(
+            totalBal,
+            newRate,
+            newMonths
+          );
+
+
+        const newInterest =
+          Math.max(
+            0,
+            newPmt *
+            newMonths -
+            totalBal
+          );
+
+
+        const newTotalCost =
+          newPmt *
+          newMonths +
+          fee;
+
+
+        const netSavings =
+          originalCost -
+          newTotalCost;
+
+
+        const monthlyReduction =
+          getCurrentMonthlyPayment() -
+          newPmt;
+
+
+        html += `
+
+          <hr
+            style="
+              margin:14px 0;
+              border:none;
+              border-top:1px dashed #bbf7d0;
+            "
+          >
+
+
+          <strong>
+            🔎 預期新利率試算
+          </strong>
+
+          <div class="refinance-summary">
+
+            <div class="refi-box">
+
+              <div class="refi-label">
+                預期新利率
+              </div>
+
+              <div class="refi-value">
+                ${newRate.toFixed(2)}%
+              </div>
+
+            </div>
+
+
+            <div class="refi-box">
+
+              <div class="refi-label">
+                新貸款期限
+              </div>
+
+              <div class="refi-value">
+                ${newMonths} 個月
+              </div>
+
+            </div>
+
+
+            <div class="refi-box">
+
+              <div class="refi-label">
+                新貸款每月付款
+              </div>
+
+              <div class="refi-value">
+                NT$ ${money(newPmt)}
+              </div>
+
+            </div>
+
+
+            <div class="refi-box">
+
+              <div class="refi-label">
+                新貸款總利息
+              </div>
+
+              <div class="refi-value">
+                NT$ ${money(newInterest)}
+              </div>
+
+            </div>
+
+
+            <div class="refi-box">
+
+              <div class="refi-label">
+                開辦費
+              </div>
+
+              <div class="refi-value">
+                NT$ ${money(fee)}
+              </div>
+
+            </div>
+
+
+            <div class="refi-box">
+
+              <div class="refi-label">
+                新貸總支出
+              </div>
+
+              <div class="refi-value">
+                NT$ ${money(newTotalCost)}
+              </div>
+
+            </div>
+
+          </div>
+
+        `;
+
+
+        if (
+          netSavings > 0
+        ) {
+
+          html += `
+
+            <div class="result-box">
+
+              <strong
+                class="success-text"
+              >
+                ✅ 轉貸划算
+              </strong>
+
+              <br><br>
+
+              • 預估淨省：
+
+              <strong
+                style="
+                  color:var(--success);
+                  font-size:1.15rem;
+                "
+              >
+                NT$ ${money(netSavings)}
+              </strong>
+
+              <br>
+
+              • 每月付款變化：
+
+              ${
+                monthlyReduction >= 0
+                ? `
+                  約減少
+                  <strong>
+                    NT$ ${money(monthlyReduction)}
+                  </strong>
+                  ／月
+                `
+                : `
+                  約增加
+                  <strong
+                    class="danger-text"
+                  >
+                    NT$ ${money(
+                      Math.abs(
+                        monthlyReduction
+                      )
+                    )}
+                  </strong>
+                  ／月
+                `
+              }
+
+            </div>
+
+          `;
+
+        } else {
+
+          html += `
+
+            <div class="danger-box">
+
+              <strong>
+                ❌ 目前條件不划算
+              </strong>
+
+              <br><br>
+
+              扣除開辦費後，
+              預估總支出反而多出：
+
+              <strong>
+                NT$ ${money(
+                  Math.abs(netSavings)
+                )}
+              </strong>
+
+            </div>
+
+          `;
+
+        }
+
+
+        /*
+          利率判斷
+        */
+
+        if (
+          breakEvenRate !== null
+        ) {
+
+          if (
+            newRate <
+            breakEvenRate
+          ) {
+
+            html += `
+
+              <div class="result-box">
+
+                🟢 新利率
+                <strong>
+                  ${newRate.toFixed(2)}%
+                </strong>
+
+                低於損益兩平利率
+                <strong>
+                  ${breakEvenRate.toFixed(2)}%
+                </strong>
+
+                。
+
+                從純利息與費用角度來看，
+                具備轉貸節省空間。
+
+              </div>
+
+            `;
+
+          } else {
+
+            html += `
+
+              <div class="warning-box">
+
+                🟠 新利率
+                <strong>
+                  ${newRate.toFixed(2)}%
+                </strong>
+
+                高於損益兩平利率
+                <strong>
+                  ${breakEvenRate.toFixed(2)}%
+                </strong>
+
+                。
+
+                目前條件下不建議轉貸。
+
+              </div>
+
+            `;
+
+          }
+
+        }
+
+      } else {
+
+        html += `
+
+          <div class="info-panel" style="margin-top:12px;">
+
+            💡 輸入「預期新利率」後，
+            系統會進一步計算：
+
+            <br>
+
+            新月付金 → 新總利息 → 開辦費 →
+            淨省金額 → 每月負擔變化 →
+            是否值得轉貸。
+
+          </div>
+
+        `;
+
+      }
+
+
+      /*
+        原始成本說明
+      */
+
+      html += `
+
+        <hr
+          style="
+            margin:14px 0;
+            border:none;
+            border-top:1px dashed #bbf7d0;
+          "
+        >
+
+        <div
+          style="
+            font-size:0.82rem;
+            color:#64748b;
+          "
+        >
+
+          📌 本次試算原始負債成本：
+
+          <strong>
+            NT$ ${money(originalCost)}
+          </strong>
+
+          <br>
+
+          信貸剩餘期間預估總支出：
+          NT$ ${money(summary.loanTotalCost)}
+
+          <br>
+
+          信用卡目前本金：
+          NT$ ${money(summary.cardBal)}
+
+          <br><br>
+
+          ⚠️ 注意：
+          信用卡部分沒有輸入「剩餘期數」，
+          因此本模型以目前卡費本金作為比較基準，
+          並沒有假設未來循環最低繳款會產生多少年利息。
+          實際轉貸前應以銀行提供的清償金額、
+          提前清償費用、開辦費及實際總費用年百分率
+          重新確認。
+
+        </div>
+
+      `;
+
+
+      const resBox =
+        document.getElementById(
+          "refinance-result"
+        );
+
+
+      resBox.style.display =
+        "block";
+
+
+      resBox.innerHTML =
+        html;
+
+    };
+
+
+  /* =========================================================
+     目前每月付款
+  ========================================================= */
+
+  function getCurrentMonthlyPayment() {
+
+    let total = 0;
+
+
+    loans.forEach(
+      item => {
+
+        total += calcPMT(
+          num(item.balance),
+          num(item.rate),
+          num(item.months)
+        );
+
+      }
+    );
+
+
+    cards.forEach(
+      item => {
+
+        total += num(
+          item.minPay
+        );
+
+      }
+    );
+
+
+    return total;
+
+  }
+
+
+  /* =========================================================
+     Excel 匯出
+  ========================================================= */
+
+  window.exportToExcel =
+    function() {
+
+      if (
+        loans.length === 0 &&
+        cards.length === 0
+      ) {
+
+        alert(
+          "目前沒有可匯出的貸款或信用卡資料。"
+        );
+
+        return;
+
+      }
+
+
+      const workbook =
+        XLSX.utils.book_new();
+
+
+      /*
+        信貸
+      */
+
+      if (
+        loans.length > 0
+      ) {
+
+        const loanData =
+          loans.map(
+            item => {
+
+              const pmt =
+                calcPMT(
+                  item.balance,
+                  item.rate,
+                  item.months
+                );
+
+
+              const interest =
+                Math.max(
+                  0,
+                  pmt *
+                  item.months -
+                  item.balance
+                );
+
+
+              const firstMonthInterest =
+                item.balance *
+                (item.rate / 100) /
+                12;
+
+
+              return {
+
+                "銀行名稱":
+                  item.bank,
+
+                "剩餘本金（元）":
+                  item.balance,
+
+                "年利率（%）":
+                  item.rate,
+
+                "剩餘期數（月）":
+                  item.months,
+
+                "當月預估利息（元）":
+                  Math.round(
+                    firstMonthInterest
+                  ),
+
+                "預估利息總額（元）":
+                  Math.round(
+                    interest
+                  ),
+
+                "每月繳款日":
+                  item.payDay,
+
+                "估算月付金（元）":
+                  Math.round(
+                    pmt
+                  )
+
+              };
+
+            }
+          );
+
+
+        const wsLoans =
+          XLSX.utils.json_to_sheet(
+            loanData
+          );
+
+
+        XLSX.utils.book_append_sheet(
+          workbook,
+          wsLoans,
+          "信用貸款清單"
+        );
+
+      }
+
+
+      /*
+        信用卡
+      */
+
+      if (
+        cards.length > 0
+      ) {
+
+        const cardData =
+          cards.map(
+            item => {
+
+              const monthlyInterest =
+                item.balance *
+                (item.rate / 100) /
+                12;
+
+
+              return {
+
+                "發卡銀行／卡名":
+                  item.bank,
+
+                "卡費總額（元）":
+                  item.balance,
+
+                "循環年利率（%）":
+                  item.rate,
+
+                "單月預估循環利息（元）":
+                  Math.round(
+                    monthlyInterest
+                  ),
+
+                "最低應繳金額（元）":
+                  item.minPay,
+
+                "每月繳款截止日":
+                  item.payDay
+
+              };
+
+            }
+          );
+
+
+        const wsCards =
+          XLSX.utils.json_to_sheet(
+            cardData
+          );
+
+
+        XLSX.utils.book_append_sheet(
+          workbook,
+          wsCards,
+          "信用卡帳款清單"
+        );
+
+      }
+
+
+      /*
+        總覽
+      */
+
+      const summary =
+        getDebtSummary();
+
+
+      const summaryData = [
+
+        {
+          "項目":
+            "信貸剩餘本金",
+          "金額":
+            Math.round(
+              summary.loanBal
+            )
+        },
+
+        {
+          "項目":
+            "信用卡未繳卡費",
+          "金額":
+            Math.round(
+              summary.cardBal
+            )
+        },
+
+        {
+          "項目":
+            "總負債",
+          "金額":
+            Math.round(
+              summary.totalBal
+            )
+        },
+
+        {
+          "項目":
+            "信貸剩餘期間總支出",
+          "金額":
+            Math.round(
+              summary.loanTotalCost
+            )
+        },
+
+        {
+          "項目":
+            "信貸預估剩餘利息",
+          "金額":
+            Math.round(
+              summary.loanInterest
+            )
+        },
+
+        {
+          "項目":
+            "整體加權平均利率",
+          "金額":
+            Number(
+              summary.avgRate.toFixed(2)
+            )
+        }
+
+      ];
+
+
+      const wsSummary =
+        XLSX.utils.json_to_sheet(
+          summaryData
+        );
+
+
+      XLSX.utils.book_append_sheet(
+        workbook,
+        wsSummary,
+        "負債總覽"
+      );
+
+
+      /*
+        匯出
+      */
+
+      XLSX.writeFile(
+        workbook,
+        "個人綜合負債與信用卡管理報表_V2.1.xlsx"
+      );
+
+    };
+
+
+  /* =========================================================
+     點擊 Modal 外部關閉
+  ========================================================= */
+
+  document
+    .querySelectorAll(".modal")
+    .forEach(
+      modal => {
+
+        modal.addEventListener(
+          "click",
+          function(e) {
+
+            if (
+              e.target === modal
+            ) {
+
+              modal.style.display =
+                "none";
+
+            }
+
+          }
+        );
+
+      }
+    );
+
+
+  /* =========================================================
+     Escape 關閉 Modal
+  ========================================================= */
+
+  document.addEventListener(
+    "keydown",
+    function(e) {
+
+      if (
+        e.key === "Escape"
+      ) {
+
+        document
+          .querySelectorAll(".modal")
+          .forEach(
+            modal => {
+
+              modal.style.display =
+                "none";
+
+            }
+          );
+
+      }
+
+    }
+  );
+
+
+</script>
+
+</body>
+</html>
